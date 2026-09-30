@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>日報・チェック・生産管理 プロトタイプ</title>
+<style>
+  :root {
+    --bg: #f3f4f6; --card: #ffffff; --line: #d1d5db; --text: #1f2937; --sub: #6b7280;
+    --accent: #1d4ed8; --accent-bg: #dbeafe;
+    --ok: #15803d; --ok-bg: #dcfce7; --warn: #b45309; --warn-bg: #fef3c7; --ng: #b91c1c; --ng-bg: #fee2e2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font-family: "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", "Meiryo", sans-serif; font-size: 15px; }
+  header { background: #111827; color: #fff; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 16px; font-weight: 500; margin: 0; }
+  header small { color: #9ca3af; font-size: 12px; }
+  .switch { display: flex; background: #1f2937; border-radius: 10px; padding: 4px; gap: 4px; }
+  .switch button { border: 0; background: transparent; color: #d1d5db; padding: 10px 16px; border-radius: 8px; font: inherit; cursor: pointer; }
+  .switch button.on { background: #fff; color: #111827; font-weight: 500; }
+  main { max-width: 1120px; margin: 0 auto; padding: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 15px; font-weight: 500; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .step { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 13px; align-items: center; justify-content: center; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 12px 16px; font: inherit; cursor: pointer; min-height: 48px; text-align: left; }
+  .chip small { display: block; color: var(--sub); font-size: 12px; }
+  .chip.on { border-color: var(--accent); background: var(--accent-bg); color: #1e3a8a; font-weight: 500; }
+  .chip:disabled { opacity: .35; cursor: default; }
+  .teams { display: flex; flex-wrap: wrap; gap: 4px 28px; }
+  .group-label { font-size: 12px; color: var(--sub); margin: 10px 0 6px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 820px) { .row { grid-template-columns: 1fr; } }
+  .qr { background: #111827; color: #fff; border: 0; }
+  .drawing { border: 1px solid var(--line); border-radius: 10px; background: #fcfcfd; padding: 8px; }
+  .drawing svg { width: 100%; height: auto; display: block; }
+  .drawing .cap { font-size: 12px; color: var(--sub); padding: 4px 4px 0; }
+  table.items { width: 100%; border-collapse: collapse; }
+  table.items td { border-top: 1px solid #e5e7eb; padding: 10px 6px; vertical-align: middle; }
+  .ball { display: inline-flex; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); font-weight: 500; align-items: center; justify-content: center; font-size: 13px; }
+  .spec { font-size: 12px; color: var(--sub); }
+  input.num { width: 120px; font: inherit; font-size: 18px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; text-align: right; }
+  .okng { display: flex; gap: 6px; }
+  .okng button { font: inherit; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; min-width: 64px; }
+  .okng button.on.ok { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); font-weight: 500; }
+  .okng button.on.ng { background: var(--ng-bg); border-color: var(--ng); color: var(--ng); font-weight: 500; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .b-OK { background: var(--ok-bg); color: var(--ok); } .b-注意 { background: var(--warn-bg); color: var(--warn); }
+  .b-NG { background: var(--ng-bg); color: var(--ng); } .b-未 { background: #f3f4f6; color: var(--sub); }
+  .stepper { display: flex; align-items: center; gap: 8px; }
+  .stepper button { width: 52px; height: 52px; font-size: 24px; border-radius: 10px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  .stepper input { width: 96px; font-size: 24px; text-align: center; padding: 8px; border: 1px solid var(--line); border-radius: 10px; font-family: inherit; }
+  textarea { width: 100%; font: inherit; padding: 10px; border: 1px solid var(--line); border-radius: 8px; min-height: 60px; }
+  .submit { width: 100%; font: inherit; font-size: 18px; font-weight: 500; padding: 18px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; cursor: pointer; }
+  .err { color: var(--ng); font-size: 13px; margin-top: 8px; }
+  .note { font-size: 13px; color: var(--sub); line-height: 1.7; }
+  .empty { padding: 16px; border: 1px dashed var(--line); border-radius: 10px; color: var(--sub); line-height: 1.7; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #111827; color: #fff; padding: 12px 20px; border-radius: 10px; opacity: 0; transition: opacity .25s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .kpi .v { font-size: 26px; font-weight: 500; } .kpi .l { font-size: 12px; color: var(--sub); }
+  .kpi.alert .v { color: var(--ng); }
+  .ai { border-left: 4px solid #0f766e; border-radius: 0; background: #f0fdfa; }
+  .ai ul { margin: 0; padding-left: 20px; line-height: 1.8; }
+  .ai .tag { font-size: 11px; color: #0f766e; border: 1px solid #0f766e; border-radius: 4px; padding: 1px 6px; }
+  .tablewrap { overflow-x: auto; }
+  table.list { width: 100%; border-collapse: collapse; min-width: 720px; }
+  table.list th { text-align: left; font-size: 12px; color: var(--sub); font-weight: 500; padding: 8px; border-bottom: 1px solid var(--line); }
+  table.list td { padding: 10px 8px; border-bottom: 1px solid #eef0f3; }
+  table.list tr.click { cursor: pointer; } table.list tr.click:hover { background: #f9fafb; }
+  table.list tr.sel { background: var(--accent-bg); }
+  .ngrow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid var(--ng-bg); background: #fff7f7; border-radius: 10px; margin-bottom: 8px; }
+  .ngrow select, .ngrow button { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+  .ngrow button { background: var(--text); color: #fff; border: 0; cursor: pointer; }
+  .done { color: var(--ok); font-size: 13px; }
+  .gantt { min-width: 900px; }
+  .g-row { display: grid; grid-template-columns: 230px 1fr; align-items: center; border-top: 1px solid #eef0f3; }
+  .g-head { border-top: 0; }
+  .g-label { padding: 10px 8px; font-size: 14px; }
+  .g-days { display: grid; grid-template-columns: repeat(15, 1fr); font-size: 11px; color: var(--sub); text-align: center; }
+  .g-track { position: relative; height: 64px; }
+  .g-cell { position: absolute; top: 0; bottom: 0; border-left: 1px dashed #e5e7eb; }
+  .g-bar { position: absolute; top: 14px; height: 32px; border-radius: 6px; border: 1px solid rgba(0,0,0,.12); font-size: 11px; padding: 0 6px; line-height: 32px; overflow: hidden; white-space: nowrap; color: #1f2937; }
+  .g-due { position: absolute; top: 4px; bottom: 4px; border-left: 3px solid; }
+  .prog { height: 4px; background: #e5e7eb; border-radius: 2px; margin-top: 4px; width: 60px; } .prog div { height: 4px; background: var(--accent); border-radius: 2px; }
+  .qrgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .qrcard { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; cursor: pointer; }
+  .qrcard:hover { border-color: var(--accent); background: #f8fbff; }
+  .qrcard small { color: var(--sub); font-size: 12px; text-align: center; line-height: 1.6; }
+  .qrbox { width: 120px; height: 120px; margin-bottom: 6px; }
+  .qrbig { width: 160px; height: 160px; flex: none; }
+  .qrbox img, .qrbox canvas, .qrbig img, .qrbig canvas { width: 100% !important; height: auto !important; }
+  .scanframe { width: 150px; height: 150px; margin: 0 auto; border: 3px solid var(--accent); border-radius: 16px; position: relative; }
+  .scanframe span { position: absolute; left: 12px; right: 12px; top: 50%; height: 2px; background: #ef4444; }
+  .partHead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .big { font-size: 26px; font-weight: 500; letter-spacing: .02em; }
+  .assign { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0 8px; }
+  @media (max-width: 720px) { .assign { grid-template-columns: repeat(2, 1fr); } }
+  .assign > div { background: var(--accent-bg); border-radius: 10px; padding: 10px 12px; }
+  .assign b { display: block; font-size: 18px; font-weight: 500; color: #1e3a8a; }
+  .linkbtn { border: 0; background: none; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; padding: 0 4px; }
+  .qrprint { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 720px) { .qrprint { grid-template-columns: 1fr; } }
+  .qrlabel { display: flex; gap: 16px; align-items: center; border: 1px dashed #9ca3af; border-radius: 8px; padding: 16px; background: #fff; }
+  .url { font-size: 10px; color: var(--sub); word-break: break-all; margin-top: 6px; }
+  @media print { header, .banner, .noprint { display: none !important; } body { background: #fff; } main { padding: 0; max-width: none; } .qrlabel { break-inside: avoid; } }
+  .it { border-top: 1px solid #e5e7eb; padding: 12px 4px; }
+  .it-head { display: flex; align-items: center; gap: 10px; }
+  .it-name { flex: 1; }
+  .it-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 0 36px; }
+  .adj { min-width: 76px; height: 48px; border-radius: 10px; border: 1px solid var(--line); background: #fff; font: inherit; cursor: pointer; }
+  .adj:active { background: var(--accent-bg); }
+  input.num.untouched { color: #9ca3af; }
+  .nomb { min-height: 48px; padding: 8px 12px; }
+  .dev { font-size: 13px; color: var(--sub); }
+  .row.chk { grid-template-columns: 0.9fr 1.3fr; }
+  @media (max-width: 820px) { .row.chk { grid-template-columns: 1fr; } }
+  .stepper button { width: 60px; font-size: 18px; }
+  .filt { display: grid; grid-template-columns: 48px 1fr; gap: 10px 12px; align-items: center; }
+  .g-eq { background: #f9fafb; }
+  .g-eq .g-track { height: 34px; }
+  .g-load { position: absolute; top: 12px; height: 10px; background: #9ca3af; border-radius: 3px; border-right: 2px solid #f9fafb; }
+  .g-load.dim { background: #d1d5db; }
+  .g-lane .g-track { height: 46px; }
+  .g-lane .g-bar { top: 8px; height: 30px; line-height: 30px; }
+  .g-lane { cursor: grab; }
+  .g-lane.dragging { opacity: .4; }
+  .g-lane.over, .g-eq.over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .handle { color: #9ca3af; margin-right: 4px; }
+  .mvs { float: right; display: flex; gap: 2px; }
+  .mv { border: 1px solid var(--line); background: #fff; border-radius: 6px; width: 26px; height: 24px; cursor: pointer; font-size: 10px; padding: 0; color: var(--sub); }
+  .banner { background: var(--warn-bg); color: #78350f; font-size: 13px; padding: 8px 16px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="banner">イメージ用のプロトタイプです。人名・品番・規格値はすべて架空です。登録した内容は画面を閉じると消えます。</div>
+<header>
+  <div><h1>日報・チェック・生産管理（プロトタイプ）</h1><small id="today"></small></div>
+  <div class="switch">
+    <button id="tabInput" class="on">従業員の入力画面（タブレット）</button>
+    <button id="tabAdmin">管理者の確認画面</button>
+    <button id="tabPlan">生産管理（設備と納期）</button>
+    <button id="tabQR">QRコード（印刷）</button>
+  </div>
+</header>
+<main id="app"></main>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const EMPLOYEES = [
+  { name: '山田 太郎', team: '1係' }, { name: '佐藤 健', team: '1係' },
+  { name: '鈴木 一郎', team: '2係' }, { name: '高橋 誠', team: '2係' },
+  { name: '田中 実', team: '4係' }, { name: '伊藤 翔', team: '4係' },
+  { name: '渡辺 大', team: '5係' }, { name: '中村 光', team: '5係' },
+];
+const PROCESSES = { LNC: ['LNC-20', 'LNC-42'], L: ['10L-01'], BR: ['BR-06', 'BR-07'], K: ['-'] };
+const PARTS = {
+  '3B51120040': { name: 'ボス', procs: ['LNC', 'BR', 'K'], drawing: 'boss' },
+  '7C22031150': { name: 'フランジ', procs: ['LNC', 'BR', 'K'], drawing: 'flange' },
+  '5D40117620': { name: 'シャフト', procs: ['LNC', 'L', 'K'], drawing: 'shaft' },
+};
+const CHECKS = {
+  '3B51120040|LNC': [
+    { n: 1, name: '外径', spec: 'φ120.00（−0.05 / 0）', type: 'num', lo: 119.95, hi: 120.00, tool: '外側マイクロメータ' },
+    { n: 2, name: '内径', spec: 'φ60.00（0 / +0.03）', type: 'num', lo: 60.00, hi: 60.03, tool: 'シリンダーゲージ' },
+    { n: 3, name: '全長', spec: '85.0 ±0.1', type: 'num', lo: 84.9, hi: 85.1, tool: 'ノギス' },
+    { n: 4, name: '面取り', spec: 'C1', type: 'ok', tool: '目視' },
+    { n: 5, name: 'キズ・打痕', spec: 'なきこと', type: 'ok', tool: '目視' },
+  ],
+  '3B51120040|BR': [
+    { n: 6, name: '穴径', spec: '8-φ12（0 / +0.1）', type: 'num', lo: 12.0, hi: 12.1, tool: 'ピンゲージ' },
+    { n: 7, name: '穴位置', spec: 'P.C.D.90 ±0.1', type: 'num', lo: 89.9, hi: 90.1, tool: 'ノギス' },
+    { n: 8, name: 'バリ', spec: 'なきこと', type: 'ok', tool: '目視' },
+  ],
+  '3B51120040|K': [
+    { n: 5, name: 'キズ・打痕', spec: 'なきこと', type: 'ok', tool: '目視' },
+    { n: 9, name: '刻印', spec: '品番・ロット', type: 'ok', tool: '目視' },
+  ],
+  '7C22031150|LNC': [
+    { n: 1, name: '外径', spec: 'φ200 ±0.1', type: 'num', lo: 199.9, hi: 200.1, tool: 'ノギス' },
+    { n: 2, name: '厚さ', spec: 't25 ±0.05', type: 'num', lo: 24.95, hi: 25.05, tool: '外側マイクロメータ' },
+    { n: 3, name: '面粗さ', spec: 'Ra1.6', type: 'ok', tool: '比較片' },
+  ],
+  '7C22031150|BR': [
+    { n: 4, name: 'ボルト穴', spec: '8-φ18（0 / +0.2）', type: 'num', lo: 18.0, hi: 18.2, tool: 'ノギス' },
+    { n: 5, name: 'ねじ', spec: 'M16 通り／止まり', type: 'ok', tool: 'ねじゲージ' },
+  ],
+  '7C22031150|K': [],
+  '5D40117620|LNC': [
+    { n: 1, name: '外径', spec: 'φ45 h7（−0.025 / 0）', type: 'num', lo: 44.975, hi: 45.000, tool: '外側マイクロメータ' },
+    { n: 2, name: '全長', spec: '320 ±0.2', type: 'num', lo: 319.8, hi: 320.2, tool: 'ノギス' },
+    { n: 3, name: '振れ', spec: '0.02 以下', type: 'num', lo: 0, hi: 0.02, oneSided: true, tool: 'ダイヤルゲージ' },
+  ],
+  '5D40117620|L': [
+    { n: 4, name: 'キー溝幅', spec: '14（0 / +0.043）', type: 'num', lo: 14.0, hi: 14.043, tool: 'ブロックゲージ' },
+    { n: 5, name: 'キズ・打痕', spec: 'なきこと', type: 'ok', tool: '目視' },
+  ],
+  '5D40117620|K': [
+    { n: 6, name: '外観', spec: 'サビ・キズなし', type: 'ok', tool: '目視' },
+  ],
+};
+
+const NOM = {
+  '3B51120040|LNC|1': [120.00, 0.01], '3B51120040|LNC|2': [60.00, 0.01], '3B51120040|LNC|3': [85.0, 0.05],
+  '3B51120040|BR|6': [12.00, 0.01], '3B51120040|BR|7': [90.0, 0.05],
+  '7C22031150|LNC|1': [200.0, 0.05], '7C22031150|LNC|2': [25.00, 0.01], '7C22031150|BR|4': [18.0, 0.05],
+  '5D40117620|LNC|1': [45.000, 0.001], '5D40117620|LNC|2': [320.0, 0.05], '5D40117620|LNC|3': [0.000, 0.001],
+  '5D40117620|L|4': [14.000, 0.001],
+};
+Object.entries(CHECKS).forEach(([k, items]) => items.forEach(it => { const v = NOM[`${k}|${it.n}`]; if (v) [it.nom, it.step] = v; }));
+const EQUIP_PROC = Object.fromEntries(Object.entries(PROCESSES).flatMap(([p, es]) => es.map(e => [e, p])));
+
+const DRAWINGS = {
+  boss: {
+    body: `
+      <line x1="80" y1="105" x2="290" y2="105" stroke="#9ca3af" stroke-dasharray="10 3 2 3"/>
+      <rect x="100" y="40" width="170" height="130" fill="none" stroke="#1f2937" stroke-width="2"/>
+      <line x1="100" y1="78" x2="270" y2="78" stroke="#1f2937" stroke-dasharray="6 4"/>
+      <line x1="100" y1="132" x2="270" y2="132" stroke="#1f2937" stroke-dasharray="6 4"/>
+      <rect x="180" y="40" width="12" height="24" fill="none" stroke="#1f2937" stroke-dasharray="4 3"/>
+      <line x1="70" y1="40" x2="70" y2="170" stroke="#6b7280"/><text x="18" y="109" class="dim">φ120</text>
+      <line x1="232" y1="78" x2="232" y2="132" stroke="#6b7280"/><text x="238" y="109" class="dim">φ60</text>
+      <line x1="100" y1="192" x2="270" y2="192" stroke="#6b7280"/><text x="176" y="186" class="dim">85</text>
+      <text x="200" y="30" class="dim">8-φ12 P.C.D.90</text>`,
+    balls: { 1: [40, 135], 2: [250, 130], 3: [185, 212], 4: [284, 42], 5: [320, 100], 6: [168, 22], 7: [330, 26], 8: [150, 60], 9: [150, 150] },
+  },
+  flange: {
+    body: `
+      <circle cx="180" cy="115" r="90" fill="none" stroke="#1f2937" stroke-width="2"/>
+      <circle cx="180" cy="115" r="30" fill="none" stroke="#1f2937"/>
+      ${[0,1,2,3,4,5,6,7].map(i => { const a = i * Math.PI / 4; return `<circle cx="${(180 + 62 * Math.cos(a)).toFixed(1)}" cy="${(115 + 62 * Math.sin(a)).toFixed(1)}" r="8" fill="none" stroke="#1f2937"/>`; }).join('')}
+      <circle cx="180" cy="115" r="62" fill="none" stroke="#9ca3af" stroke-dasharray="10 3 2 3"/>
+      <text x="282" y="118" class="dim">φ200</text><text x="24" y="118" class="dim">t25</text>
+      <text x="246" y="186" class="dim">8-φ18</text><text x="80" y="34" class="dim">M16</text><text x="36" y="206" class="dim">Ra1.6</text>`,
+    balls: { 1: [320, 90], 2: [40, 90], 3: [60, 186], 4: [262, 60], 5: [110, 52] },
+  },
+  shaft: {
+    body: `
+      <line x1="16" y1="115" x2="344" y2="115" stroke="#9ca3af" stroke-dasharray="10 3 2 3"/>
+      <rect x="30" y="90" width="300" height="50" fill="none" stroke="#1f2937" stroke-width="2"/>
+      <rect x="200" y="90" width="60" height="8" fill="none" stroke="#1f2937"/>
+      <line x1="30" y1="170" x2="330" y2="170" stroke="#6b7280"/><text x="168" y="164" class="dim">320</text>
+      <text x="36" y="80" class="dim">φ45 h7</text><text x="212" y="80" class="dim">14</text><text x="280" y="80" class="dim">振れ 0.02</text>`,
+    balls: { 1: [20, 70], 2: [180, 192], 3: [336, 62], 4: [236, 58], 5: [120, 160], 6: [70, 160] },
+  },
+};
+
+function judge(item, v) {
+  if (v === undefined || v === '' || v === null) return '未';
+  if (item.type === 'ok') return v === 'OK' ? 'OK' : 'NG';
+  const x = parseFloat(v);
+  if (isNaN(x)) return '未';
+  if (x < item.lo - 1e-9 || x > item.hi + 1e-9) return 'NG';
+  const m = (item.hi - item.lo) * 0.15;
+  const atNom = lim => item.nom !== undefined && Math.abs(lim - item.nom) < 1e-9;
+  if (x > item.hi - m + 1e-9 && !atNom(item.hi)) return '注意';
+  if (!item.oneSided && x < item.lo + m - 1e-9 && !atNom(item.lo)) return '注意';
+  return 'OK';
+}
+function worst(list) {
+  if (list.some(j => j === 'NG')) return 'NG';
+  if (list.some(j => j === '注意')) return '注意';
+  return 'OK';
+}
+const COLOR = { OK: '#15803d', '注意': '#b45309', NG: '#b91c1c', '未': '#6b7280' };
+
+function drawingSvg(partCode, items, values) {
+  const d = DRAWINGS[PARTS[partCode].drawing];
+  const active = new Set(items.map(i => i.n));
+  const balls = Object.entries(d.balls).map(([n, [x, y]]) => {
+    const on = active.has(+n);
+    let tag = '';
+    if (values && on) {
+      const it = items.find(i => i.n === +n);
+      const v = values[n];
+      if (v !== undefined && v !== '') {
+        const j = judge(it, v);
+        const w = String(v).length * 7 + 12;
+        const tx = x + w + 16 > 356 ? x - w - 14 : x + 14;
+        tag = `<rect x="${tx}" y="${y - 10}" width="${w}" height="20" rx="4" fill="#fff" stroke="${COLOR[j]}"/><text x="${tx + w / 2}" y="${y + 4}" text-anchor="middle" font-size="11" fill="${COLOR[j]}">${v}</text>`;
+      }
+    }
+    return `<circle cx="${x}" cy="${y}" r="11" fill="#fff" stroke="${on ? '#1d4ed8' : '#d1d5db'}" stroke-width="2"/><text x="${x}" y="${y + 4}" text-anchor="middle" font-size="12" font-weight="500" fill="${on ? '#1d4ed8' : '#9ca3af'}">${n}</text>${tag}`;
+  }).join('');
+  return `<svg viewBox="0 0 360 225" role="img" aria-label="図面"><style>.dim{font-size:12px;fill:#374151}</style>${d.body}${balls}</svg>`;
+}
+
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rand = rng(20260929);
+function makeValue(item) {
+  if (item.type === 'ok') return 'OK';
+  const lo = item.oneSided ? 0 : item.lo, span = item.hi - lo;
+  const x = lo + span * (item.oneSided ? 0.2 + rand() * 0.45 : 0.3 + rand() * 0.4);
+  const dec = String(item.hi).split('.')[1]?.length || 0;
+  return x.toFixed(Math.max(dec, 2));
+}
+function makeReport(time, emp, part, proc, equip, qty, override = {}) {
+  const items = CHECKS[`${part}|${proc}`] || [];
+  const values = {};
+  items.forEach(it => { values[it.n] = override[it.n] ?? makeValue(it); });
+  const results = items.map(it => ({ n: it.n, name: it.name, spec: it.spec, value: values[it.n], judge: judge(it, values[it.n]) }));
+  const e = EMPLOYEES.find(x => x.name === emp);
+  return { id: Math.random().toString(36).slice(2), time, emp, team: e.team, part, proc, equip, qty, ngQty: 0, memo: '', values, results,
+           status: items.length ? worst(results.map(r => r.judge)) : '項目なし', confirmed: null };
+}
+let reports = [
+  makeReport('07:39', '山田 太郎', '3B51120040', 'LNC', 'LNC-20', 14),
+  makeReport('08:23', '鈴木 一郎', '5D40117620', 'L', '10L-01', 6),
+  makeReport('09:03', '高橋 誠', '3B51120040', 'BR', 'BR-06', 28),
+  makeReport('09:03', '田中 実', '7C22031150', 'BR', 'BR-07', 21, { 4: '18.26' }),
+  makeReport('09:22', '伊藤 翔', '5D40117620', 'K', '-', 6),
+  makeReport('10:10', '山田 太郎', '3B51120040', 'LNC', 'LNC-20', 12, { 1: '119.955' }),
+  makeReport('10:26', '渡辺 大', '7C22031150', 'LNC', 'LNC-42', 30),
+  makeReport('11:05', '佐藤 健', '5D40117620', 'LNC', 'LNC-42', 20),
+  makeReport('11:34', '鈴木 一郎', '5D40117620', 'L', '10L-01', 8),
+  makeReport('12:50', '高橋 誠', '3B51120040', 'BR', 'BR-07', 81),
+  makeReport('13:15', '山田 太郎', '3B51120040', 'LNC', 'LNC-20', 13, { 1: '119.946' }),
+  makeReport('13:40', '田中 実', '7C22031150', 'BR', 'BR-07', 18),
+  makeReport('14:05', '佐藤 健', '5D40117620', 'LNC', 'LNC-42', 19, { 3: '0.019' }),
+];
+reports[10].ngQty = 1; reports[3].ngQty = 2;
+
+let view = 'input';
+let f = { emp: null, part: null, proc: null, equip: null, values: {}, qty: 0, ngQty: 0, memo: '' };
+let adminTeam = '全体', selected = null, tried = false;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
+function nowHM() { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+function nextHM() {
+  const last = reports.map(r => r.time).sort().pop();
+  const [h, m] = last.split(':').map(Number), t = h * 60 + m + 7;
+  const next = `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+  return nowHM() > next ? nowHM() : next;
+}
+$('#today').textContent = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+
+function currentItems() { return f.part && f.proc ? (CHECKS[`${f.part}|${f.proc}`] || []) : []; }
+
+const ROUTING = {
+  '3B51120040': { emp: '山田 太郎', proc: 'LNC', equip: 'LNC-20' },
+  '7C22031150': { emp: '田中 実', proc: 'BR', equip: 'BR-07' },
+  '5D40117620': { emp: '鈴木 一郎', proc: 'L', equip: '10L-01' },
+};
+const teamOf = name => (EMPLOYEES.find(e => e.name === name) || {}).team || '';
+const partUrl = code => location.href.split(/[?#]/)[0] + '?part=' + code;
+let editAssign = false;
+
+function scanPart(code, push = true) {
+  if (!PARTS[code]) { toast('登録されていない品番です'); return; }
+  const r = ROUTING[code];
+  f = { emp: r.emp, part: code, proc: r.proc, equip: r.equip, values: {}, qty: 0, ngQty: 0, memo: '' };
+  editAssign = false; tried = false; view = 'input';
+  if (push) history.pushState(null, '', '?part=' + code);
+}
+function clearPart(push = true) {
+  f = { emp: null, part: null, proc: null, equip: null, values: {}, qty: 0, ngQty: 0, memo: '' };
+  editAssign = false; tried = false;
+  if (push) history.pushState(null, '', location.pathname);
+}
+window.addEventListener('popstate', () => {
+  const c = new URLSearchParams(location.search).get('part');
+  c ? scanPart(c, false) : clearPart(false);
+  render();
+});
+
+function drawQRs(size) {
+  document.querySelectorAll('[data-qr]').forEach(el => {
+    if (typeof QRCode === 'undefined') { el.innerHTML = '<div class="note">QRの表示にはネット接続が必要です</div>'; return; }
+    el.innerHTML = '';
+    new QRCode(el, { text: partUrl(el.dataset.qr), width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
+  });
+}
+
+function decOf(step) { return (String(step).split('.')[1] || '').length; }
+function devText(it, v) {
+  if (v === undefined || v === '') return `基準 ${it.nom.toFixed(decOf(it.step))}`;
+  const x = parseFloat(v);
+  if (isNaN(x)) return '';
+  const d = x - it.nom;
+  if (Math.abs(d) < it.step / 2) return '基準どおり';
+  return `基準から ${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(decOf(it.step))}`;
+}
+function itemRow(it) {
+  const v = f.values[it.n];
+  const j = judge(it, v);
+  const badge = `<span class="badge b-${j}" id="j${it.n}">${j === '未' ? '未確認' : j}</span>`;
+  const ctl = it.type === 'num'
+    ? `<button class="adj" data-adj="${it.n}" data-dir="-1">−${it.step}</button>
+       <input class="num ${v === undefined ? 'untouched' : ''}" inputmode="decimal" data-num="${it.n}" value="${esc(v ?? it.nom.toFixed(decOf(it.step)))}">
+       <button class="adj" data-adj="${it.n}" data-dir="1">＋${it.step}</button>
+       <button class="chip nomb" data-nom="${it.n}">基準どおり</button>
+       <span class="dev" id="dv${it.n}">${devText(it, v)}</span>`
+    : `<div class="okng"><button class="ok ${v === 'OK' ? 'on' : ''}" data-okng="${it.n}" data-v="OK">OK</button><button class="ng ${v === 'NG' ? 'on' : ''}" data-okng="${it.n}" data-v="NG">NG</button></div>`;
+  return `<div class="it"><div class="it-head"><span class="ball">${it.n}</span><div class="it-name">${it.name}<div class="spec">${it.spec}・${it.tool}</div></div>${badge}</div><div class="it-ctl">${ctl}</div></div>`;
+}
+
+function renderInput() {
+  if (!f.part) {
+    $('#app').innerHTML = `
+    <div class="card" style="text-align:center;padding:28px 16px">
+      <div class="scanframe"><span></span></div>
+      <h2 style="font-size:20px;justify-content:center;margin-top:14px">品番のQRを読んでください</h2>
+      <p class="note">QRを読むと、その品番の係・担当者・設備・工程と、チェック項目・図面が自動で出ます。</p>
+      <button class="submit" id="camera" style="max-width:420px">カメラでQRを読む</button>
+    </div>
+    <div class="card">
+      <h2>試し：下のQRを押すと、読んだことにします</h2>
+      <div class="qrgrid">${Object.entries(PARTS).map(([c, p]) => {
+        const r = ROUTING[c];
+        return `<button class="qrcard" data-scan="${c}"><div class="qrbox" data-qr="${c}"></div><b>${c}</b><span>${p.name}</span><small>${teamOf(r.emp)} ${r.emp}<br>${r.equip} / ${r.proc}</small></button>`;
+      }).join('')}</div>
+      <p class="note">QRごとに開く先（URLの最後の <code>?part=品番</code>）が違います。実物では現品票や箱にこのQRを貼ります。印刷用は上の「QRコード（印刷）」にあります。</p>
+    </div>`;
+    drawQRs(120);
+    return;
+  }
+
+  const teams = [...new Set(EMPLOYEES.map(e => e.team))];
+  const items = currentItems();
+  const team = f.team || teamOf(f.emp);
+  const equips = PARTS[f.part].procs.flatMap(p => PROCESSES[p]);
+  const r = ROUTING[f.part];
+  const changed = f.emp !== r.emp || f.proc !== r.proc || f.equip !== r.equip;
+  const missing = [];
+  if (!f.emp) missing.push('担当');
+  if (!f.equip) missing.push('設備');
+  if (!(f.qty > 0)) missing.push('生産数');
+  if (items.some(it => judge(it, f.values[it.n]) === '未')) missing.push('チェック項目（基準どおりでも押して確認）');
+
+  $('#app').innerHTML = `
+  <div class="card">
+    <div class="partHead">
+      <div><div class="spec">読み取った品番</div><div class="big">${f.part}</div><div>${PARTS[f.part].name}</div></div>
+      <button class="chip" id="rescan">別の品番のQRを読む</button>
+    </div>
+    <div class="assign">
+      <div><span class="spec">係</span><b>${team || '−'}</b></div>
+      <div><span class="spec">担当</span><b>${f.emp || '−'}</b></div>
+      <div><span class="spec">設備</span><b>${f.equip ? (f.equip === '-' ? '設備なし' : f.equip) : '−'}</b></div>
+      <div><span class="spec">工程</span><b>${f.proc || '−'}</b></div>
+    </div>
+    <div class="note">${changed ? '品番の決まりから変更しています。' : '品番から自動で決まりました。'}${editAssign ? '' : '<button class="linkbtn" id="editAssign">違うときだけ変更する</button>'}</div>
+    ${editAssign ? `
+      <div class="group-label" style="margin-top:14px">係</div>
+      <div class="chips">${teams.map(t => `<button class="chip ${team === t ? 'on' : ''}" data-teamsel="${t}">${t}</button>`).join('')}</div>
+      <div class="group-label">担当</div>
+      <div class="chips">${EMPLOYEES.filter(e => e.team === team).map(e => `<button class="chip ${f.emp === e.name ? 'on' : ''}" data-emp="${e.name}">${e.name}</button>`).join('')}</div>
+      <div class="group-label">設備</div>
+      <div class="chips">${equips.map(e => `<button class="chip ${f.equip === e ? 'on' : ''}" data-eqsel="${e}">${e === '-' ? '設備なし' : e}<small>工程 ${EQUIP_PROC[e]}</small></button>`).join('')}</div>
+      <div class="group-label">工程</div>
+      <div class="note">設備から自動で決まります：<b>${f.proc || '−'}</b></div>
+      <div style="margin-top:12px"><button class="linkbtn" id="closeAssign">変更を閉じる</button></div>` : ''}
+  </div>
+
+  <div class="card">
+    <h2><span class="step">1</span>チェック（図面を見ながら）</h2>
+    ${items.length === 0 ? `<div class="empty">この組み合わせ（${f.part} × ${f.proc}）のチェック項目はまだ登録されていません。<br>紙のシートか図面から AI が項目を下書きし、管理者が確認して登録する想定です。</div>` : `
+    <p class="note" style="margin-top:0">寸法は基準の値が最初から入っています。測った値に合わせて ± で動かすか、そのままなら「基準どおり」を押してください。</p>
+    <div class="row chk">
+      <div class="drawing" id="drawingBox">${drawingSvg(f.part, items, f.values)}<div class="cap">${f.part} ${PARTS[f.part].name}　青い番号が今回のチェック項目</div></div>
+      <div>${items.map(itemRow).join('')}</div>
+    </div>`}
+  </div>
+
+  <div class="card">
+    <h2><span class="step">2</span>日報</h2>
+    <div class="row">
+      <div><div class="group-label">生産数</div><div class="stepper"><button data-step="qty" data-d="-10">−10</button><button data-step="qty" data-d="-1">−1</button><input id="qty" inputmode="numeric" value="${f.qty}"><button data-step="qty" data-d="1">+1</button><button data-step="qty" data-d="10">+10</button></div></div>
+      <div><div class="group-label">不良数</div><div class="stepper"><button data-step="ngQty" data-d="-1">−1</button><input id="ngQty" inputmode="numeric" value="${f.ngQty}"><button data-step="ngQty" data-d="1">+1</button></div></div>
+    </div>
+    <div class="group-label">メモ（あれば）</div>
+    <textarea id="memo" placeholder="刃具交換した、など">${esc(f.memo)}</textarea>
+  </div>
+
+  <button class="submit" id="submit">日報とチェックをまとめて登録</button>
+  ${tried && missing.length ? `<div class="err">まだ入っていません：${missing.join('、')}</div>` : ''}
+  <p class="note">QRを読む → チェック → 生産数 → 登録、の4つで終わります。日報とチェックシートが1回の入力で両方残ります。</p>`;
+}
+
+function renderQR() {
+  $('#app').innerHTML = `
+  <div class="card noprint">
+    <h2>品番ごとのQRコード（印刷用）</h2>
+    <p class="note">QRごとに開く先が違います。読むと、その品番の入力画面が係・担当・工程・設備が入った状態で開きます。<br>
+    ${location.protocol === 'file:' ? '今はこのPCのファイルを指しています。Webに置くと、そのURLになります。' : 'このページのURLを指しているので、タブレットのカメラで読むとそのまま開きます。'}</p>
+    <button class="chip qr" id="print">印刷する</button>
+  </div>
+  <div class="qrprint">${Object.entries(PARTS).map(([c, p]) => {
+    const r = ROUTING[c];
+    return `<div class="qrlabel"><div class="qrbig" data-qr="${c}"></div>
+      <div><div class="spec">品番</div><div class="big">${c}</div><div>${p.name}</div>
+      <div class="spec" style="margin-top:6px">${teamOf(r.emp)} ${r.emp}／${r.proc}・${r.equip}</div>
+      <div class="url">${esc(partUrl(c))}</div></div></div>`;
+  }).join('')}</div>`;
+  drawQRs(160);
+}
+
+function renderAdmin() {
+  const list = reports.filter(r => adminTeam === '全体' || r.team === adminTeam).sort((a, b) => b.time.localeCompare(a.time));
+  const teams = ['全体', ...new Set(EMPLOYEES.map(e => e.team))];
+  const members = EMPLOYEES.filter(e => adminTeam === '全体' || e.team === adminTeam);
+  const notYet = members.filter(e => !reports.some(r => r.emp === e.name));
+  const ngOpen = list.filter(r => r.status === 'NG' && !r.confirmed);
+  const qty = list.reduce((s, r) => s + r.qty, 0);
+
+  const trend = {};
+  list.forEach(r => r.results.forEach(x => {
+    if (x.judge === 'OK') return;
+    const k = `${r.equip}|${PARTS[r.part].name}|${x.name}`;
+    (trend[k] = trend[k] || []).push(`${r.time} ${x.judge}（${x.value}）`);
+  }));
+  const ai = [];
+  Object.entries(trend).filter(([, v]) => v.length >= 2).forEach(([k, v]) => {
+    const [eq, pn, item] = k.split('|');
+    ai.push(`${eq} の${pn}「${item}」が規格の端に寄っています：${v.sort().join(' → ')}。刃具の摩耗や補正を確認してください。`);
+  });
+  if (ngOpen.length) ai.push(`まだ処置が決まっていない NG が ${ngOpen.length} 件あります（${ngOpen.map(r => `${r.time} ${r.equip}`).join('、')}）。`);
+  if (notYet.length) ai.push(`${notYet.map(e => e.name).join('、')} さんの報告がまだありません。`);
+  if (!ai.length) ai.push('気になる点はありません。');
+
+  const sel = reports.find(r => r.id === selected);
+  const selItems = sel ? (CHECKS[`${sel.part}|${sel.proc}`] || []) : [];
+
+  $('#app').innerHTML = `
+  <div class="chips" style="margin-bottom:14px">${teams.map(t => `<button class="chip ${adminTeam === t ? 'on' : ''}" data-team="${t}">${t}</button>`).join('')}</div>
+  <div class="kpis">
+    <div class="kpi"><div class="v">${list.length}</div><div class="l">今日の報告</div></div>
+    <div class="kpi"><div class="v">${qty}</div><div class="l">生産数の合計</div></div>
+    <div class="kpi ${ngOpen.length ? 'alert' : ''}"><div class="v">${ngOpen.length}</div><div class="l">処置待ちの NG</div></div>
+    <div class="kpi ${notYet.length ? 'alert' : ''}"><div class="v">${notYet.length}</div><div class="l">報告がまだの人</div></div>
+  </div>
+
+  <div class="card ai">
+    <h2>今日のまとめ <span class="tag">AI・イメージ</span></h2>
+    <ul>${ai.map(a => `<li>${esc(a)}</li>`).join('')}</ul>
+  </div>
+
+  <div class="card">
+    <h2>NG の処置</h2>
+    ${list.filter(r => r.status === 'NG').length === 0 ? '<div class="note">NG はありません。</div>' :
+      list.filter(r => r.status === 'NG').map(r => `
+      <div class="ngrow">
+        <div><span class="badge b-NG">NG</span>　${r.time}　${r.emp}（${r.team}）　${r.part} ${PARTS[r.part].name}　${r.equip}<br>
+          <span class="spec">${r.results.filter(x => x.judge === 'NG').map(x => `${x.name} ${x.spec} → ${x.value}`).join('、')}</span></div>
+        ${r.confirmed ? `<span class="done">確認済み：${r.confirmed}</span>` : `
+        <div style="display:flex;gap:6px"><select id="act-${r.id}"><option>再測定</option><option>再加工</option><option>廃棄</option><option>特別採用</option></select>
+        <button data-confirm="${r.id}">確認済みにする</button></div>`}
+      </div>`).join('')}
+  </div>
+
+  <div class="card">
+    <h2>今日の報告（行を押すと中身と図面が出ます）</h2>
+    <div class="tablewrap"><table class="list">
+      <tr><th>時刻</th><th>名前</th><th>係</th><th>品番</th><th>工程</th><th>設備</th><th>生産数</th><th>不良</th><th>チェック</th></tr>
+      ${list.map(r => `<tr class="click ${selected === r.id ? 'sel' : ''}" data-sel="${r.id}">
+        <td>${r.time}</td><td>${r.emp}</td><td>${r.team}</td><td>${r.part}<br><span class="spec">${PARTS[r.part].name}</span></td>
+        <td>${r.proc}</td><td>${r.equip}</td><td>${r.qty}</td><td>${r.ngQty || ''}</td>
+        <td><span class="badge b-${r.status === '項目なし' ? '未' : r.status}">${r.status}</span></td></tr>`).join('')}
+    </table></div>
+  </div>
+
+  ${sel ? `<div class="card">
+    <h2>${sel.time}　${sel.emp}　${sel.part} ${PARTS[sel.part].name}　${sel.proc} / ${sel.equip}</h2>
+    ${selItems.length ? `<div class="row">
+      <div class="drawing">${drawingSvg(sel.part, selItems, sel.values)}<div class="cap">図面に実測値を重ねて表示</div></div>
+      <div><table class="items">${sel.results.map(x => `<tr><td><span class="ball">${x.n}</span></td><td>${x.name}<div class="spec">${x.spec}</div></td><td>${esc(x.value)}</td><td><span class="badge b-${x.judge}">${x.judge}</span></td></tr>`).join('')}</table>
+      <p class="note">生産数 ${sel.qty}　不良 ${sel.ngQty}${sel.memo ? `<br>メモ：${esc(sel.memo)}` : ''}</p></div>
+    </div>` : '<div class="note">この組み合わせはチェック項目が未登録です。</div>'}
+  </div>` : ''}`;
+}
+
+const CT = { '3B51120040|LNC': 9, '3B51120040|BR': 3, '7C22031150|LNC': 6, '7C22031150|BR': 4, '5D40117620|LNC': 5, '5D40117620|L': 15 };
+const AVG_RATE = { 'LNC-20': 0.70, 'LNC-42': 0.75, '10L-01': 0.50, 'BR-06': 0.50, 'BR-07': 0.80 };
+const ORDERS = [
+  { id: 'J-1001', cust: 'A社', part: '3B51120040', proc: 'LNC', equip: 'LNC-20', emp: '山田 太郎', total: 240, done: 60, D: 5 },
+  { id: 'J-1002', cust: 'B社', part: '7C22031150', proc: 'BR', equip: 'BR-07', emp: '田中 実', total: 250, done: 50, D: 4 },
+  { id: 'J-1003', cust: 'A社', part: '5D40117620', proc: 'LNC', equip: 'LNC-42', emp: '佐藤 健', total: 360, done: 60, D: 8 },
+  { id: 'J-1004', cust: 'C社', part: '3B51120040', proc: 'BR', equip: 'BR-06', emp: '高橋 誠', total: 300, done: 50, D: 12 },
+  { id: 'J-1005', cust: 'B社', part: '7C22031150', proc: 'LNC', equip: 'LNC-42', emp: '渡辺 大', total: 400, done: 0, D: 10 },
+  { id: 'J-1006', cust: 'C社', part: '5D40117620', proc: 'L', equip: '10L-01', emp: '鈴木 一郎', total: 100, done: 30, D: 5 },
+  { id: 'J-1007', cust: 'A社', part: '7C22031150', proc: 'BR', equip: 'BR-07', emp: '田中 実', total: 350, done: 0, D: 5 },
+  { id: 'J-1008', cust: 'B社', part: '3B51120040', proc: 'BR', equip: 'BR-07', emp: '伊藤 翔', total: 300, done: 0, D: 9 },
+];
+const HORIZON = 15;
+let planHours = 8;
+const SEQ = {};
+let pf = { team: '全体', emp: '係全体', part: '全品番' };
+let dragId = null;
+
+function addWorkdays(n) {
+  const d = new Date(); let k = 0;
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+  while (k < n) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) k++; }
+  return d;
+}
+const md = d => `${d.getMonth() + 1}/${d.getDate()}`;
+const WD = ['日', '月', '火', '水', '木', '金', '土'];
+function todayRate(eq) {
+  const min = reports.filter(r => r.equip === eq).reduce((s, r) => s + r.qty * (CT[`${r.part}|${r.proc}`] || 0), 0);
+  return min / 480;
+}
+function orderedFor(eq, orders) {
+  const list = orders.filter(o => o.equip === eq);
+  const seq = (SEQ[eq] || []).map(id => list.find(o => o.id === id)).filter(Boolean);
+  list.filter(o => !seq.includes(o)).sort((a, b) => a.D - b.D).forEach(o => {
+    const i = seq.findIndex(x => x.D > o.D);
+    seq.splice(i < 0 ? seq.length : i, 0, o);
+  });
+  return seq;
+}
+function schedule(orders, hours) {
+  const out = {};
+  Object.keys(AVG_RATE).forEach(eq => {
+    const cap = hours * 60 * AVG_RATE[eq];
+    let t = 0;
+    out[eq] = orderedFor(eq, orders).map(o => {
+      const need = (o.total - o.done) * CT[`${o.part}|${o.proc}`];
+      const start = t; t += need / cap;
+      const status = t > o.D ? '遅れ' : (o.D - t < 1 ? 'ぎりぎり' : '間に合う');
+      return { ...o, need, start, end: t, status };
+    });
+  });
+  return out;
+}
+function moveOrder(id, targetId, eq) {
+  const o = ORDERS.find(x => x.id === id);
+  if (EQUIP_PROC[eq] !== o.proc) { toast(`${eq} は工程 ${EQUIP_PROC[eq]} の設備なので、${o.proc} の受注は移せません`); return false; }
+  const before = orderedFor(eq, ORDERS).map(x => x.id);
+  const from = before.indexOf(id);
+  const rest = before.filter(x => x !== id);
+  if (o.equip !== eq) { SEQ[o.equip] = orderedFor(o.equip, ORDERS).map(x => x.id).filter(x => x !== id); o.equip = eq; }
+  if (targetId === undefined) { SEQ[eq] = rest; return true; }
+  let at = targetId ? rest.indexOf(targetId) : rest.length;
+  if (from >= 0 && targetId && from < before.indexOf(targetId)) at += 1;
+  rest.splice(at, 0, id);
+  SEQ[eq] = rest;
+  return true;
+}
+function stepOrder(id, dir) {
+  const o = ORDERS.find(x => x.id === id);
+  const ids = orderedFor(o.equip, ORDERS).map(x => x.id);
+  const i = ids.indexOf(id), j = i + dir;
+  if (j < 0 || j >= ids.length) return false;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  SEQ[o.equip] = ids;
+  return true;
+}
+const ST = { '間に合う': 'OK', 'ぎりぎり': '注意', '遅れ': 'NG' };
+const BAR = { '間に合う': '#86efac', 'ぎりぎり': '#fcd34d', '遅れ': '#fca5a5' };
+const visible = o => (pf.team === '全体' || teamOf(o.emp) === pf.team) && (pf.emp === '係全体' || o.emp === pf.emp) && (pf.part === '全品番' || o.part === pf.part);
+
+function planAdvice(sch) {
+  const out = [];
+  const before = Object.values(sch).flat().filter(x => x.status === '遅れ').length;
+  Object.values(sch).flat().filter(o => o.status === '遅れ' && visible(o)).forEach(o => {
+    const late = Math.ceil(o.end) - o.D;
+    const movable = sch[o.equip].filter(x => x.start <= o.start).sort((a, b) => (a.id === o.id) - (b.id === o.id));
+    let fixed = null;
+    movable.forEach(m => PROCESSES[m.proc].filter(e => e !== m.equip && AVG_RATE[e]).forEach(e => {
+      if (fixed) return;
+      const t = Object.values(schedule(ORDERS.map(x => x.id === m.id ? { ...x, equip: e } : x), planHours)).flat();
+      if (t.find(x => x.id === o.id).status !== '遅れ' && t.filter(x => x.status === '遅れ').length < before) fixed = { id: m.id, to: e };
+    }));
+    let msg = `${o.id}（${o.cust}・${PARTS[o.part].name} ${o.total}個・納期 ${md(addWorkdays(o.D - 1))}）が ${o.equip} で約${late}日遅れる見込みです。`;
+    if (fixed) msg += fixed.id === o.id ? `${fixed.to} に移せば間に合います。` : `先に流れる ${fixed.id} を ${fixed.to} に移せば、${o.id} も間に合います。`;
+    else if (planHours < 10) msg += '就業時間を延ばす（残業）か、同じ設備の中で順番を入れ替えられないか見てください。';
+    out.push(msg);
+  });
+  const load = Object.entries(sch).map(([eq, l]) => [eq, l.length ? l[l.length - 1].end : 0]).sort((a, b) => a[1] - b[1]);
+  if (load.length) out.push(`いちばん空いているのは ${load[0][0]}（手持ち約${load[0][1].toFixed(1)}日分）です。`);
+  return out.length ? out : ['表示中の受注は、すべて納期に間に合う見込みです。'];
+}
+
+function renderPlan() {
+  const sch = schedule(ORDERS, planHours);
+  const all = Object.values(sch).flat().filter(visible);
+  const cnt = s => all.filter(o => o.status === s).length;
+  const days = Array.from({ length: HORIZON }, (_, i) => addWorkdays(i));
+  const cells = days.map((_, i) => `<div class="g-cell" style="left:${i / HORIZON * 100}%"></div>`).join('');
+  const teams = ['全体', ...new Set(EMPLOYEES.map(e => e.team))];
+  const members = EMPLOYEES.filter(e => e.team === pf.team);
+  const noFilter = pf.team === '全体' && pf.part === '全品番';
+  const eqs = Object.keys(sch).filter(eq => noFilter || sch[eq].some(visible));
+  const pos = (a, b) => `left:${Math.min(a, HORIZON) / HORIZON * 100}%;width:${Math.max(0, Math.min(b, HORIZON) - Math.min(a, HORIZON)) / HORIZON * 100}%`;
+
+  $('#app').innerHTML = `
+  <div class="card">
+    <div class="filt">
+      <span class="spec">係</span>
+      <div class="chips">${teams.map(t => `<button class="chip ${pf.team === t ? 'on' : ''}" data-pteam="${t}">${t}</button>`).join('')}</div>
+      <span class="spec">人</span>
+      <div class="chips">${pf.team === '全体' ? '<span class="note">係を選ぶと、係全体か個人で見られます</span>' :
+        ['係全体', ...members.map(e => e.name)].map(n => `<button class="chip ${pf.emp === n ? 'on' : ''}" data-pemp="${n}">${n}</button>`).join('')}</div>
+      <span class="spec">品番</span>
+      <div class="chips">${['全品番', ...Object.keys(PARTS)].map(c => `<button class="chip ${pf.part === c ? 'on' : ''}" data-ppart="${c}">${c}${PARTS[c] ? `<small>${PARTS[c].name}</small>` : ''}</button>`).join('')}</div>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="v">${all.length}</div><div class="l">表示中の受注</div></div>
+    <div class="kpi"><div class="v" style="color:var(--ok)">${cnt('間に合う')}</div><div class="l">間に合う</div></div>
+    <div class="kpi"><div class="v" style="color:var(--warn)">${cnt('ぎりぎり')}</div><div class="l">ぎりぎり（余裕1日未満）</div></div>
+    <div class="kpi ${cnt('遅れ') ? 'alert' : ''}"><div class="v">${cnt('遅れ')}</div><div class="l">遅れる見込み</div></div>
+  </div>
+  <div class="card ai">
+    <h2>今の見込み <span class="tag">AI・イメージ</span></h2>
+    <ul>${planAdvice(sch).map(a => `<li>${esc(a)}</li>`).join('')}</ul>
+  </div>
+  <div class="card">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">設備ごとの負荷（この先${HORIZON}稼働日）</h2>
+      <label class="note">1日の就業時間
+        <select id="hours" style="font:inherit;padding:8px;border-radius:8px;border:1px solid var(--line);margin-left:6px">
+          ${[8, 9, 10].map(h => `<option value="${h}" ${h === planHours ? 'selected' : ''}>${h}時間${h > 8 ? `（残業${h - 8}h）` : ''}</option>`).join('')}
+        </select></label>
+    </div>
+    <p class="note" style="margin-top:0">帯をつかんで上下にドラッグすると、同じ設備の中で順番が入れ替わります。同じ工程の別の設備の行（灰色の行）に落とすと、その設備に納期順で入ります（▲▼でも動かせます）。</p>
+    <div class="tablewrap"><div class="gantt">
+      <div class="g-row g-head"><div class="g-label"></div><div class="g-days">${days.map(d => `<div>${md(d)}<br>${WD[d.getDay()]}</div>`).join('')}</div></div>
+      ${eqs.map(eq => {
+        const list = sch[eq], last = list.length ? list[list.length - 1].end : 0;
+        return `<div class="g-row g-eq" data-eqrow="1" data-eq="${eq}">
+            <div class="g-label"><b>${eq}</b> <span class="spec">工程 ${EQUIP_PROC[eq]}</span><div class="spec">稼働率 平均${Math.round(AVG_RATE[eq] * 100)}%・今日${Math.round(todayRate(eq) * 100)}%</div><div class="spec">手持ち 約${last.toFixed(1)}日分</div></div>
+            <div class="g-track">${cells}${list.map(o => `<div class="g-load ${visible(o) ? '' : 'dim'}" style="${pos(o.start, o.end)}"></div>`).join('')}</div>
+          </div>
+          ${list.filter(visible).map(o => `<div class="g-row g-lane" draggable="true" data-lane="${o.id}" data-eq="${eq}">
+            <div class="g-label"><span class="mvs"><button class="mv" data-mv="${o.id}" data-dir="-1" title="前へ">▲</button><button class="mv" data-mv="${o.id}" data-dir="1" title="後ろへ">▼</button></span>
+              <span class="handle">⠿</span><b>${o.id}</b> ${PARTS[o.part].name}<div class="spec">${teamOf(o.emp)} ${o.emp}・残${o.total - o.done}個</div></div>
+            <div class="g-track">${cells}<div class="g-bar" title="${o.id} ${PARTS[o.part].name} 残${o.total - o.done}個" style="${pos(o.start, o.end)};background:${BAR[o.status]}">${o.id.slice(2)} ${PARTS[o.part].name}</div>
+              <div class="g-due" title="${o.id} の納期" style="left:${Math.min(o.D, HORIZON) / HORIZON * 100}%;border-color:${COLOR[ST[o.status]]}"></div></div>
+          </div>`).join('')}`;
+      }).join('')}
+    </div></div>
+    <p class="note">設備の行の灰色＝その設備の仕事全体、その下の段＝受注ごとの帯（品番ごとに段をずらして表示）、縦線＝納期。緑は間に合う、黄はぎりぎり、赤は遅れる見込み。</p>
+  </div>
+  <div class="card">
+    <h2>受注一覧（設備を変えると、すぐ計算し直します）</h2>
+    <div class="tablewrap"><table class="list">
+      <tr><th>受注</th><th>お客様</th><th>品番</th><th>担当</th><th>工程</th><th>設備</th><th>受注数</th><th>できた数</th><th>必要時間</th><th>納期</th><th>終わる見込み</th><th>判定</th></tr>
+      ${all.sort((a, b) => a.D - b.D).map(o => `<tr>
+        <td>${o.id}</td><td>${o.cust}</td><td>${o.part}<br><span class="spec">${PARTS[o.part].name}</span></td><td>${o.emp}<br><span class="spec">${teamOf(o.emp)}</span></td><td>${o.proc}</td>
+        <td><select data-move="${o.id}" style="font:inherit;padding:6px;border-radius:6px;border:1px solid var(--line)">${PROCESSES[o.proc].map(e => `<option ${e === o.equip ? 'selected' : ''}>${e}</option>`).join('')}</select></td>
+        <td>${o.total}</td><td>${o.done}<div class="prog"><div style="width:${o.done / o.total * 100}%"></div></div></td>
+        <td>${(o.need / 60).toFixed(1)}h</td><td>${md(addWorkdays(o.D - 1))}</td><td>${md(addWorkdays(Math.max(0, Math.ceil(o.end) - 1)))}</td>
+        <td><span class="badge b-${ST[o.status]}">${o.status}</span></td></tr>`).join('')}
+    </table></div>
+  </div>`;
+}
+
+document.addEventListener('change', e => {
+  if (e.target.id === 'hours') { planHours = +e.target.value; render(); }
+  else if (e.target.dataset.move) { if (moveOrder(e.target.dataset.move, undefined, e.target.value)) toast('設備を変えて計算し直しました'); render(); }
+});
+const clearOver = () => document.querySelectorAll('.over').forEach(x => x.classList.remove('over'));
+document.addEventListener('dragstart', e => {
+  const l = e.target.closest && e.target.closest('[data-lane]');
+  if (!l) return;
+  dragId = l.dataset.lane;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragId);
+  l.classList.add('dragging');
+});
+document.addEventListener('dragover', e => {
+  const t = e.target.closest && e.target.closest('[data-lane],[data-eqrow]');
+  if (!t || !dragId) return;
+  e.preventDefault();
+  clearOver(); t.classList.add('over');
+});
+document.addEventListener('drop', e => {
+  const t = e.target.closest && e.target.closest('[data-lane],[data-eqrow]');
+  clearOver();
+  if (!t || !dragId) return;
+  e.preventDefault();
+  const target = t.dataset.lane || undefined;
+  if (target !== dragId && moveOrder(dragId, target, t.dataset.eq)) { render(); toast('順番を入れ替えて計算し直しました'); }
+  dragId = null;
+});
+document.addEventListener('dragend', () => { clearOver(); dragId = null; document.querySelectorAll('.dragging').forEach(x => x.classList.remove('dragging')); });
+
+function render() {
+  $('#tabInput').classList.toggle('on', view === 'input');
+  $('#tabAdmin').classList.toggle('on', view === 'admin');
+  $('#tabPlan').classList.toggle('on', view === 'plan');
+  $('#tabQR').classList.toggle('on', view === 'qr');
+  ({ input: renderInput, admin: renderAdmin, plan: renderPlan, qr: renderQR })[view]();
+}
+
+$('#tabInput').onclick = () => { view = 'input'; render(); };
+$('#tabAdmin').onclick = () => { view = 'admin'; render(); };
+$('#tabPlan').onclick = () => { view = 'plan'; render(); };
+$('#tabQR').onclick = () => { view = 'qr'; render(); };
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button, tr[data-sel]');
+  if (!b) return;
+  const d = b.dataset;
+  if (d.scan) { scanPart(d.scan); toast(`QR を読みました：${d.scan}`); }
+  else if (b.id === 'rescan') clearPart();
+  else if (b.id === 'editAssign') editAssign = true;
+  else if (b.id === 'closeAssign') editAssign = false;
+  else if (b.id === 'camera') { toast('プロトタイプではカメラは使いません。下のQRを押してください'); return; }
+  else if (b.id === 'print') { window.print(); return; }
+  else if (d.teamsel) { f.team = d.teamsel; if (teamOf(f.emp) !== f.team) f.emp = null; }
+  else if (d.eqsel) { const np = EQUIP_PROC[d.eqsel]; if (np !== f.proc) f.values = {}; f.equip = d.eqsel; f.proc = np; }
+  else if (d.adj) {
+    const it = currentItems().find(i => i.n === +d.adj);
+    const cur = parseFloat(f.values[it.n] ?? it.nom);
+    let v = cur + (+d.dir) * it.step;
+    if (it.oneSided) v = Math.max(0, v);
+    f.values[it.n] = v.toFixed(decOf(it.step));
+  }
+  else if (d.nom) { const it = currentItems().find(i => i.n === +d.nom); f.values[it.n] = it.nom.toFixed(decOf(it.step)); }
+  else if (d.pteam) { pf.team = d.pteam; pf.emp = '係全体'; }
+  else if (d.pemp) pf.emp = d.pemp;
+  else if (d.ppart) pf.part = d.ppart;
+  else if (d.mv) { if (!stepOrder(d.mv, +d.dir)) return; toast('順番を入れ替えて計算し直しました'); }
+  else if (d.emp) f.emp = d.emp;
+  else if (d.part) { f.part = d.part; f.proc = null; f.equip = null; f.values = {}; }
+  else if (b.id === 'qr') { const codes = Object.keys(PARTS); f.part = codes[Math.floor(Math.random() * codes.length)]; f.proc = null; f.equip = null; f.values = {}; toast(`QR を読みました：${f.part}`); }
+  else if (d.proc) { f.proc = d.proc; f.equip = PROCESSES[d.proc].length === 1 ? PROCESSES[d.proc][0] : null; f.values = {}; }
+  else if (d.equip) f.equip = d.equip;
+  else if (d.okng) f.values[d.okng] = d.v;
+  else if (d.step) { f[d.step] = Math.max(0, (parseInt(f[d.step]) || 0) + parseInt(d.d)); }
+  else if (b.id === 'submit') { submit(); return; }
+  else if (d.team) { adminTeam = d.team; selected = null; }
+  else if (d.sel) selected = selected === d.sel ? null : d.sel;
+  else if (d.confirm) { const r = reports.find(x => x.id === d.confirm); r.confirmed = `${$('#act-' + r.id).value}（${nowHM()}）`; toast('確認済みにしました'); }
+  else return;
+  render();
+});
+
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.num) {
+    f.values[t.dataset.num] = t.value;
+    const it = currentItems().find(i => i.n === +t.dataset.num);
+    const j = judge(it, t.value);
+    const badge = $('#j' + it.n); badge.className = `badge b-${j}`; badge.textContent = j === '未' ? '未確認' : j;
+    const dv = $('#dv' + it.n); if (dv) dv.textContent = devText(it, t.value);
+    t.classList.remove('untouched');
+    $('#drawingBox').innerHTML = drawingSvg(f.part, currentItems(), f.values) + `<div class="cap">${f.part} ${PARTS[f.part].name}　青い番号が今回のチェック項目</div>`;
+  } else if (t.id === 'qty' || t.id === 'ngQty') f[t.id] = parseInt(t.value) || 0;
+  else if (t.id === 'memo') f.memo = t.value;
+});
+
+function submit() {
+  tried = true;
+  const items = currentItems();
+  const ok = f.emp && f.part && f.proc && f.equip && f.qty > 0 && !items.some(it => judge(it, f.values[it.n]) === '未');
+  if (!ok) { render(); return; }
+  const r = makeReport(nextHM(), f.emp, f.part, f.proc, f.equip, f.qty, { ...f.values });
+  r.ngQty = f.ngQty; r.memo = f.memo;
+  reports.push(r);
+  toast(r.status === 'NG' ? '登録しました。NG があるので管理者に知らせます' : '登録しました（日報とチェックを1回で）');
+  clearPart();
+  tried = false;
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+const initPart = new URLSearchParams(location.search).get('part');
+if (initPart) scanPart(initPart, false);
+render();
+</script>
+</body>
+</html>
