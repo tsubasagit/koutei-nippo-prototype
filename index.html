@@ -29,6 +29,7 @@
   .chip small { display: block; color: var(--sub); font-size: 12px; }
   .chip.on { border-color: var(--accent); background: var(--accent-bg); color: #1e3a8a; font-weight: 500; }
   .chip.sm { min-height: 38px; padding: 6px 12px; }
+  .chip:disabled { opacity: .35; cursor: default; }
   .chip.dark { background: #111827; color: #fff; border-color: #111827; }
   .group-label { font-size: 13px; color: var(--sub); margin: 12px 0 6px; }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -161,6 +162,62 @@
   .thumb-foot { display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-top: 6px; } .thumb .mini { white-space: nowrap; }
   .ocr { border: 2px dashed #a78bfa; background: #faf5ff; border-radius: 12px; padding: 14px; margin-top: 12px; }
   .ocrtext { white-space: pre-wrap; font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 0; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .fsel { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+  .okbox { background: var(--ok-bg); color: #14532d; border-radius: 10px; padding: 12px 14px; line-height: 1.7; }
+  .ngbox { background: var(--ng-bg); color: #7f1d1d; border-radius: 10px; padding: 12px 14px; line-height: 1.7; }
+  .deci { border: 1px solid #fecaca; background: #fffafa; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .deci-head { line-height: 1.8; }
+  .deci-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin-top: 10px; }
+  .deci-btn { text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px 12px; font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+  .deci-btn:hover { border-color: var(--accent); background: #f8fbff; }
+  .deci-btn span { font-size: 12px; color: var(--ok); }
+  .prio { display: flex; align-items: center; gap: 6px; } .prio b { font-size: 16px; width: 18px; text-align: right; } .prio span { display: flex; flex-direction: column; gap: 2px; }
+  .pchips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .pchip { display: inline-block; border-left: 5px solid; background: #f9fafb; border-radius: 4px; padding: 1px 6px; font-size: 12px; white-space: nowrap; }
+  .pchip.done { color: var(--sub); }
+  .mt-head { display: grid; grid-template-columns: repeat(15, 1fr); font-size: 10px; text-align: center; color: var(--sub); line-height: 1.3; font-weight: 400; }
+  .mt { position: relative; height: 30px; background: #fcfcfd; border-radius: 4px; }
+  .mt-bar { position: absolute; top: 5px; height: 20px; border-radius: 4px; font-size: 10px; line-height: 20px; padding: 0 4px; overflow: hidden; white-space: nowrap; color: #1f2937; border: 1px solid rgba(0,0,0,.1); }
+  table.plan td { vertical-align: middle; }
+  .g-bar.faded { opacity: .3; }
+  .g-bar[draggable] { cursor: grab; }
+  .g-eq2 .g-track { height: 46px; }
+  .pcard { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .pc-head { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .big2 { font-size: 20px; font-weight: 600; letter-spacing: .02em; }
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; }
+  .arrow { align-self: center; color: #9ca3af; font-size: 20px; }
+  .pbox { position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 150px; text-align: left; border: 2px solid; border-radius: 12px; padding: 10px 12px 10px 38px; font: inherit; cursor: pointer; background: #fff; }
+  .pbox .pnum { position: absolute; left: 10px; top: 10px; width: 20px; height: 20px; border-radius: 50%; background: currentColor; }
+  .pbox .pnum { color: inherit; }
+  .pbox b { font-size: 17px; }
+  .pbox .ppl { font-size: 13px; } .pbox .pmeta { font-size: 12px; color: var(--sub); } .pbox .pst { font-size: 11px; font-weight: 600; margin-top: 2px; }
+  .st-green { border-color: #86efac; } .st-green .pst { color: var(--ok); }
+  .st-amber { border-color: #fcd34d; background: #fffdf5; } .st-amber .pst { color: var(--warn); }
+  .st-red { border-color: #fca5a5; background: #fffafa; } .st-red .pst { color: var(--ng); }
+  .pbox .pnum { background: none; border: 2px solid #d1d5db; color: var(--sub); font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  .pbox.sel { box-shadow: 0 0 0 3px var(--accent-bg); border-color: var(--accent); }
+  .pbox:hover { box-shadow: 0 0 0 3px #eef2ff; }
+  .spanel { border: 2px solid var(--accent); border-radius: 12px; padding: 14px; margin-top: 12px; background: #fbfdff; }
+  .spanel-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 16px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1.3fr 1.4fr; gap: 14px; }
+  @media (max-width: 860px) { .row3 { grid-template-columns: 1fr; } }
+  .person { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 6px 4px 12px; background: #fff; }
+  .person small { color: var(--sub); font-size: 11px; }
+  .person.main { border-color: var(--accent); background: var(--accent-bg); color: #1e3a8a; font-weight: 500; }
+  .legend2 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 10px; font-size: 13px; }
+  .pbox-mini { display: inline-block; width: 16px; height: 12px; border-width: 2px; border-style: solid; border-radius: 4px; }
+  .wiz { border: 2px solid var(--accent); }
+  .wz-steps { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; font-size: 14px; color: var(--sub); }
+  .wz-steps span.on { color: var(--accent); font-weight: 600; } .wz-steps span.done { color: var(--ok); } .wz-steps b { color: #d1d5db; }
+  .wz-grid { display: grid; grid-template-columns: 1fr 260px; gap: 18px; }
+  @media (max-width: 860px) { .wz-grid { grid-template-columns: 1fr; } }
+  .wz-side { background: #f9fafb; border-radius: 10px; padding: 12px; align-self: start; }
+  ul.ready { list-style: none; margin: 0; padding: 0; } ul.ready li { padding: 6px 0; border-bottom: 1px solid #eef0f3; color: var(--sub); }
+  ul.ready li span { display: inline-block; width: 20px; font-weight: 700; } ul.ready li.ok { color: var(--ok); } ul.ready li small { display: block; margin-left: 20px; font-size: 12px; color: var(--sub); }
+  .big-in { font-size: 18px; width: 100%; max-width: 360px; }
+  .wzchip { background: var(--accent-bg); color: #1e3a8a; border-radius: 8px; padding: 6px 10px; font-weight: 500; }
   .progress { height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; } .progress div { height: 10px; background: var(--ok); }
   .modes { display: flex; flex-wrap: wrap; gap: 4px; background: #f3f4f6; border-radius: 10px; padding: 4px; margin-bottom: 12px; }
   .modes button { border: 0; background: transparent; padding: 10px 14px; border-radius: 8px; font: inherit; font-size: 14px; cursor: pointer; color: var(--sub); }
@@ -182,7 +239,7 @@
     <button data-view="input">入力（タブレット）</button>
     <button data-view="admin">確認（管理者）</button>
     <button data-view="plan">生産管理</button>
-    <button data-view="master">決まりの修正（管理者）</button>
+    <button data-view="master">品番・マスター（管理者）</button>
     <button data-view="qr">QRコード（印刷）</button>
   </div>
 </header>
@@ -202,24 +259,40 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600); }
 function nowHM() { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
 
-// ---------- マスター ----------
-const EMPLOYEES = [
+// ---------- マスター（管理者が画面で足せる・この端末に保存） ----------
+const DEFAULT_EMPLOYEES = [
   { name: '山田 太郎', team: '1係' }, { name: '佐藤 健', team: '1係' },
   { name: '鈴木 一郎', team: '2係' }, { name: '高橋 誠', team: '2係' },
   { name: '田中 実', team: '4係' }, { name: '伊藤 翔', team: '4係' },
   { name: '渡辺 大', team: '5係' }, { name: '中村 光', team: '5係' },
 ];
-const TEAMS = [...new Set(EMPLOYEES.map(e => e.team))];
-const teamOf = name => (EMPLOYEES.find(e => e.name === name) || {}).team || '';
-const PROCESSES = { LNC: ['LNC-20'], LNC2: ['LNC-42'], L: ['10L-01'], BR: ['BR-06', 'BR-07'], K: ['-'] };
-const PROC_ORDER = Object.keys(PROCESSES);
-const EQUIPS = Object.values(PROCESSES).flat();
-const EQUIP_PROC = Object.fromEntries(Object.entries(PROCESSES).flatMap(([p, es]) => es.map(e => [e, p])));
-const PARTS = {
+const DEFAULT_PROCESSES = { LNC: ['LNC-20'], LNC2: ['LNC-42'], L: ['10L-01'], BR: ['BR-06', 'BR-07'], K: ['-'] };
+const DEFAULT_RATES = { 'LNC-20': 0.70, 'LNC-42': 0.75, '10L-01': 0.50, 'BR-06': 0.50, 'BR-07': 0.80, '-': 0.85 };
+const DEFAULT_PARTS = {
   '3B51120040': { name: 'ボス', drawing: 'boss', route: ['LNC', 'BR', 'K'] },
   '7C22031150': { name: 'フランジ', drawing: 'flange', route: ['LNC2', 'BR', 'K'] },
   '5D40117620': { name: 'シャフト', drawing: 'shaft', route: ['LNC2', 'L', 'K'] },
 };
+const DEFAULT_CT = {
+  '3B51120040|LNC': 9, '3B51120040|BR': 3, '3B51120040|K': 0.5,
+  '7C22031150|LNC2': 6, '7C22031150|BR': 4, '7C22031150|K': 0.5,
+  '5D40117620|LNC2': 5, '5D40117620|L': 4, '5D40117620|K': 0.5,
+};
+let EMPLOYEES = LS.get('kn-emps', null) || clone(DEFAULT_EMPLOYEES);
+let PROCESSES = LS.get('kn-procs', null) || clone(DEFAULT_PROCESSES);
+let RATES = LS.get('kn-rates', null) || clone(DEFAULT_RATES);
+let PARTS = LS.get('kn-parts', null) || clone(DEFAULT_PARTS);
+let CT = LS.get('kn-ct', null) || clone(DEFAULT_CT);
+let TEAMS, PROC_ORDER, EQUIPS, EQUIP_PROC, ORDER_OF;
+function rebuild() {
+  TEAMS = [...new Set(EMPLOYEES.map(e => e.team))];
+  PROC_ORDER = Object.keys(PROCESSES);
+  EQUIPS = Object.values(PROCESSES).flat();
+  EQUIP_PROC = Object.fromEntries(Object.entries(PROCESSES).flatMap(([p, es]) => es.map(e => [e, p])));
+  ORDER_OF = { team: TEAMS, emp: EMPLOYEES.map(e => e.name), equip: EQUIPS, proc: PROC_ORDER, part: Object.keys(PARTS) };
+}
+rebuild();
+const teamOf = name => (EMPLOYEES.find(e => e.name === name) || {}).team || '';
 const eqLabel = e => e === '-' ? '設備なし' : e;
 
 // 決まり（ルーティング）：係 → 人 → 設備 → 工程 → 品番。1行＝「この人が、この設備で、この品番のこの工程をやる」
@@ -250,7 +323,11 @@ const DEFAULT_CHECKS = {
 };
 let ROUTES = LS.get('kn-routes', null) || clone(DEFAULT_ROUTES);
 let CHECKS = LS.get('kn-checks', null) || clone(DEFAULT_CHECKS);
-function saveMaster() { LS.set('kn-routes', ROUTES); LS.set('kn-checks', CHECKS); }
+function saveMaster() {
+  rebuild();
+  LS.set('kn-routes', ROUTES); LS.set('kn-checks', CHECKS); LS.set('kn-parts', PARTS); LS.set('kn-emps', EMPLOYEES);
+  LS.set('kn-procs', PROCESSES); LS.set('kn-rates', RATES); LS.set('kn-ct', CT);
+}
 const itemsFor = (part, proc) => CHECKS[`${part}|${proc}`] || [];
 const routeRows = () => ROUTES.map(r => ({ ...r, team: teamOf(r.emp) }));
 const procsOf = part => {
@@ -320,7 +397,8 @@ const DRAWINGS = {
   },
 };
 function drawingSvg(part, items, values) {
-  const d = DRAWINGS[PARTS[part].drawing];
+  const d = DRAWINGS[PARTS[part] && PARTS[part].drawing];
+  if (!d) return `<svg viewBox="0 0 360 225" role="img" aria-label="図面なし"><rect x="10" y="10" width="340" height="205" rx="8" fill="#f9fafb" stroke="#d1d5db" stroke-dasharray="6 4"/><text x="180" y="108" text-anchor="middle" font-size="14" fill="#6b7280">図面はまだ登録されていません</text><text x="180" y="132" text-anchor="middle" font-size="12" fill="#9ca3af">（本番では図面の PDF・写真を品番に付けます）</text></svg>`;
   const active = new Set(items.map(i => i.n));
   const balls = Object.entries(d.balls).map(([n, [x, y]]) => {
     const on = active.has(+n);
@@ -473,7 +551,6 @@ function nextHM() {
 
 // ---------- 上から順に絞り込む（係 → 人 → 設備 → 工程 → 品番） ----------
 const LEVELS = [['team', '係'], ['emp', '人'], ['equip', '設備'], ['proc', '工程'], ['part', '品番']];
-const ORDER_OF = { team: TEAMS, emp: EMPLOYEES.map(e => e.name), equip: EQUIPS, proc: PROC_ORDER, part: Object.keys(PARTS) };
 function cascade(rows, sel) {
   const opts = {};
   let cur = rows;
@@ -528,7 +605,7 @@ function scan(part, proc, push = true) {
   f = { ...blankF(), part, proc, equip: r ? r.equip : null, emp: r ? r.emp : null, team: r ? teamOf(r.emp) : null };
   editAssign = false; tried = false; view = 'input';
   if (push) history.pushState(null, '', `?part=${part}&proc=${proc}`);
-  if (!r) toast('この品番×工程の決まりがありません。「決まりの修正」で足せます');
+  if (!r) toast('この品番×工程の決まりがありません。「品番・マスター」で足せます');
 }
 function clearPart(push = true) {
   f = blankF(); editAssign = false; tried = false; LS.del('kn-draft');
@@ -630,7 +707,7 @@ function renderInput() {
       <p class="note">この品番の「決まり」の中から、上から順に選びます。</p>
       ${filterBar('input', inputRows(), f, '選び直す')}
       <details class="anyemp"><summary>ここにない人が作業した（応援・代打）</summary>
-        <p class="note">決まりにない人として記録し、管理者に知らせます。よくある組み合わせなら「決まりの修正」で足してください。</p>
+        <p class="note">決まりにない人として記録し、管理者に知らせます。よくある組み合わせなら「品番・マスター」で足してください。</p>
         <div class="chips">${EMPLOYEES.map(e => `<button class="chip sm ${f.emp === e.name ? 'on' : ''}" data-anyemp="${e.name}">${e.name}<small>${e.team}</small></button>`).join('')}</div>
       </details>
       <div style="margin-top:12px"><button class="linkbtn" id="closeAssign">変更を閉じる</button></div>` : ''}
@@ -715,7 +792,7 @@ function renderAdmin() {
   });
   if (ngOpen.length) ai.push(`処置が決まっていない NG が ${ngOpen.length} 件あります（${ngOpen.map(r => `${r.time} ${r.equip}`).join('、')}）。`);
   const outs = list.filter(r => r.role === '外');
-  if (outs.length) ai.push(`決まりにない人の作業が ${outs.length} 件あります（${outs.map(r => `${r.emp}・${r.part} ${r.proc}`).join('、')}）。よくあるなら「決まりの修正」で足してください。`);
+  if (outs.length) ai.push(`決まりにない人の作業が ${outs.length} 件あります（${outs.map(r => `${r.emp}・${r.part} ${r.proc}`).join('、')}）。よくあるなら「品番・マスター」で足してください。`);
   if (notYet.length) ai.push(`${notYet.map(e => e.name).join('、')} さんの報告がまだありません（出勤の人だけ数えています）。`);
   if (!ai.length) ai.push('気になる点はありません。');
   const sr = reports.find(r => r.id === selected);
@@ -768,151 +845,236 @@ function renderAdmin() {
   </div>` : ''}`;
 }
 
-// ---------- 生産管理 ----------
-const CT = { '3B51120040|LNC': 9, '3B51120040|BR': 3, '7C22031150|LNC2': 6, '7C22031150|BR': 4, '5D40117620|LNC2': 5, '5D40117620|L': 15 };
+// ---------- 生産管理（受注は品番で1件。工程を順に流す） ----------
 const SETUP_MIN = 60;
-const AVG_RATE = { 'LNC-20': 0.70, 'LNC-42': 0.75, '10L-01': 0.50, 'BR-06': 0.50, 'BR-07': 0.80 };
-const ORDERS = [
-  { id: 'J-1001', cust: 'A社', part: '3B51120040', proc: 'LNC', equip: 'LNC-20', emp: '山田 太郎', total: 240, done: 60, D: 5 },
-  { id: 'J-1002', cust: 'B社', part: '7C22031150', proc: 'BR', equip: 'BR-07', emp: '田中 実', total: 250, done: 50, D: 4 },
-  { id: 'J-1003', cust: 'A社', part: '5D40117620', proc: 'LNC2', equip: 'LNC-42', emp: '佐藤 健', total: 300, done: 60, D: 8 },
-  { id: 'J-1004', cust: 'C社', part: '3B51120040', proc: 'BR', equip: 'BR-06', emp: '高橋 誠', total: 300, done: 50, D: 12 },
-  { id: 'J-1005', cust: 'B社', part: '7C22031150', proc: 'LNC2', equip: 'LNC-42', emp: '渡辺 大', total: 360, done: 0, D: 10 },
-  { id: 'J-1006', cust: 'C社', part: '5D40117620', proc: 'L', equip: '10L-01', emp: '鈴木 一郎', total: 100, done: 30, D: 5 },
-  { id: 'J-1007', cust: 'A社', part: '7C22031150', proc: 'BR', equip: 'BR-07', emp: '田中 実', total: 350, done: 0, D: 5 },
-  { id: 'J-1008', cust: 'B社', part: '3B51120040', proc: 'BR', equip: 'BR-07', emp: '伊藤 翔', total: 300, done: 0, D: 9 },
-];
 const HORIZON = 15;
-let planHours = 8, dragId = null;
-const SEQ = {};
-const orderRows = () => ORDERS.map(o => ({ ...o, team: teamOf(o.emp) }));
-const visible = o => matchSel(FILTERS.plan, { ...o, team: teamOf(o.emp) });
+const ST = { '間に合う': 'OK', 'ぎりぎり': '注意', '遅れ': 'NG' };
+const BAR = { '間に合う': '#86efac', 'ぎりぎり': '#fcd34d', '遅れ': '#fca5a5' };
+const PROC_COLOR = ['#93c5fd', '#a5b4fc', '#fcd34d', '#86efac', '#f9a8d4', '#fdba74', '#67e8f9'];
+const procColor = p => PROC_COLOR[Math.max(0, PROC_ORDER.indexOf(p)) % PROC_COLOR.length];
+const DEFAULT_ORDERS = [
+  { id: 'J-1001', cust: 'A社', part: '3B51120040', qty: 240, done: { LNC: 60 }, D: 8 },
+  { id: 'J-1002', cust: 'B社', part: '7C22031150', qty: 250, done: { LNC2: 250, BR: 50 }, D: 5 },
+  { id: 'J-1003', cust: 'A社', part: '5D40117620', qty: 300, done: { LNC2: 60 }, D: 10 },
+  { id: 'J-1004', cust: 'C社', part: '3B51120040', qty: 300, done: { LNC: 300, BR: 250 }, D: 12 },
+  { id: 'J-1005', cust: 'B社', part: '7C22031150', qty: 200, done: {}, D: 13 },
+  { id: 'J-1006', cust: 'C社', part: '5D40117620', qty: 100, done: { LNC2: 100, L: 30 }, D: 5 },
+  { id: 'J-1007', cust: 'A社', part: '7C22031150', qty: 350, done: { LNC2: 350 }, D: 5 },
+  { id: 'J-1008', cust: 'B社', part: '3B51120040', qty: 150, done: {}, D: 14 },
+].sort((a, b) => a.D - b.D || a.id.localeCompare(b.id)).map((o, i) => ({ ...o, prio: i + 1 }));
+let ORDERS = LS.get('kn-orders', null) || clone(DEFAULT_ORDERS);
+const saveOrders = () => LS.set('kn-orders', ORDERS);
+let planHours = 8, planView = 'list', planF = { team: '', emp: '', part: '' }, planDecisions = [], addOrd = null, dragId = null;
+
 function addWorkdays(n) {
   const d = new Date(); let k = 0;
   while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
   while (k < n) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) k++; }
   return d;
 }
+function workdaysUntil(dateStr) {
+  const target = new Date(dateStr + 'T00:00:00'), d = new Date();
+  d.setHours(0, 0, 0, 0);
+  let n = 0;
+  while (d <= target) { if (d.getDay() !== 0 && d.getDay() !== 6) n++; d.setDate(d.getDate() + 1); }
+  return n;
+}
 const md = d => `${d.getMonth() + 1}/${d.getDate()}`;
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
+const dayDate = x => addWorkdays(Math.max(0, Math.ceil(x - 1e-9) - 1));
+const isoDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 function todayRate(eq) { return reports.filter(r => r.equip === eq).reduce((s, r) => s + r.qty * (CT[`${r.part}|${r.proc}`] || 0), 0) / 480; }
-function orderedFor(eq, orders) {
-  const list = orders.filter(o => o.equip === eq);
-  const seq = (SEQ[eq] || []).map(id => list.find(o => o.id === id)).filter(Boolean);
-  list.filter(o => !seq.includes(o)).sort((a, b) => a.D - b.D).forEach(o => { const i = seq.findIndex(x => x.D > o.D); seq.splice(i < 0 ? seq.length : i, 0, o); });
-  return seq;
-}
-function schedule(orders, hours) {
-  const out = {};
-  Object.keys(AVG_RATE).forEach(eq => {
-    const cap = hours * 60 * AVG_RATE[eq];
+const stepEq = (o, proc) => (o.eq && o.eq[proc]) || (mainRoute(o.part, proc) || {}).equip || (PROCESSES[proc] || [])[0];
+
+function planAll(orders = ORDERS, hours = planHours) {
+  const busy = {};
+  return orders.filter(o => PARTS[o.part]).slice().sort((a, b) => a.prio - b.prio).map(o => {
     let t = 0;
-    out[eq] = orderedFor(eq, orders).map(o => {
-      const need = SETUP_MIN + (o.total - o.done) * CT[`${o.part}|${o.proc}`];
-      const start = t; t += need / cap;
-      return { ...o, need, start, setupEnd: start + SETUP_MIN / cap, end: t, status: t > o.D ? '遅れ' : (o.D - t < 1 ? 'ぎりぎり' : '間に合う') };
+    const steps = PARTS[o.part].route.map(proc => {
+      const eq = stepEq(o, proc), rem = Math.max(0, o.qty - ((o.done || {})[proc] || 0));
+      if (!rem || !eq) return { proc, eq, rem, start: t, end: t, setupEnd: t };
+      const cap = hours * 60 * (RATES[eq] ?? 0.7);
+      const dur = (SETUP_MIN + rem * (CT[`${o.part}|${proc}`] || 5)) / cap;
+      const b = (busy[eq] = busy[eq] || []).sort((x, y) => x[0] - y[0]);
+      let start = t;
+      for (const [s0, e0] of b) { if (start + dur <= s0 + 1e-9) break; if (e0 > start) start = e0; }
+      b.push([start, start + dur]);
+      t = start + dur;
+      return { proc, eq, rem, start, end: t, setupEnd: start + SETUP_MIN / cap };
     });
+    return { ...o, steps, end: t, slack: o.D - t, status: t > o.D + 1e-9 ? '遅れ' : o.D - t < 1 ? 'ぎりぎり' : '間に合う' };
   });
-  return out;
 }
-function moveOrder(id, targetId, eq) {
-  const o = ORDERS.find(x => x.id === id);
-  if (EQUIP_PROC[eq] !== o.proc) { toast(`${eq} は工程 ${EQUIP_PROC[eq]} の設備なので、工程 ${o.proc} の受注は移せません`); return false; }
-  const before = orderedFor(eq, ORDERS).map(x => x.id), from = before.indexOf(id), rest = before.filter(x => x !== id);
-  if (o.equip !== eq) { SEQ[o.equip] = orderedFor(o.equip, ORDERS).map(x => x.id).filter(x => x !== id); o.equip = eq; }
-  if (targetId === undefined) { SEQ[eq] = rest; return true; }
+const lateCount = pl => pl.filter(x => x.status === '遅れ').length;
+const prioIds = () => ORDERS.slice().sort((a, b) => a.prio - b.prio).map(o => o.id);
+function renumber(ids) { ids.forEach((id, i) => { const o = ORDERS.find(x => x.id === id); if (o) o.prio = i + 1; }); }
+function movePrio(id, targetId) {
+  const before = prioIds(), from = before.indexOf(id), rest = before.filter(x => x !== id);
   let at = targetId ? rest.indexOf(targetId) : rest.length;
-  if (from >= 0 && targetId && from < before.indexOf(targetId)) at += 1;
-  rest.splice(at, 0, id); SEQ[eq] = rest;
-  return true;
+  if (targetId && from < before.indexOf(targetId)) at += 1;
+  rest.splice(at, 0, id); renumber(rest);
 }
-function stepOrder(id, dir) {
-  const o = ORDERS.find(x => x.id === id), ids = orderedFor(o.equip, ORDERS).map(x => x.id), i = ids.indexOf(id), j = i + dir;
-  if (j < 0 || j >= ids.length) return false;
-  [ids[i], ids[j]] = [ids[j], ids[i]]; SEQ[o.equip] = ids;
-  return true;
+function orderEmps(o) { return (PARTS[o.part] ? PARTS[o.part].route : []).map(p => (mainRoute(o.part, p) || {}).emp).filter(Boolean); }
+function visibleOrder(o) {
+  const emps = orderEmps(o);
+  return (!planF.team || emps.some(e => teamOf(e) === planF.team)) && (!planF.emp || emps.includes(planF.emp)) && (!planF.part || o.part === planF.part);
 }
-const ST = { '間に合う': 'OK', 'ぎりぎり': '注意', '遅れ': 'NG' };
-const BAR = { '間に合う': '#86efac', 'ぎりぎり': '#fcd34d', '遅れ': '#fca5a5' };
-function planAdvice(sch) {
-  const out = [], before = Object.values(sch).flat().filter(x => x.status === '遅れ').length;
-  Object.values(sch).flat().filter(o => o.status === '遅れ' && visible(o)).forEach(o => {
-    const movable = sch[o.equip].filter(x => x.start <= o.start).sort((a, b) => (a.id === o.id) - (b.id === o.id));
-    let fixed = null;
-    movable.forEach(m => PROCESSES[m.proc].filter(e => e !== m.equip && AVG_RATE[e]).forEach(e => {
-      if (fixed) return;
-      const t = Object.values(schedule(ORDERS.map(x => x.id === m.id ? { ...x, equip: e } : x), planHours)).flat();
-      if (t.find(x => x.id === o.id).status !== '遅れ' && t.filter(x => x.status === '遅れ').length < before) fixed = { id: m.id, to: e };
-    }));
-    let msg = `${o.id}（${o.cust}・${PARTS[o.part].name} ${o.total}個・納期 ${md(addWorkdays(o.D - 1))}）が ${o.equip} で約${Math.ceil(o.end) - o.D}日遅れる見込みです。`;
-    if (fixed) msg += fixed.id === o.id ? `${fixed.to} に移せば間に合います。` : `先に流れる ${fixed.id} を ${fixed.to} に移せば、${o.id} も間に合います。`;
-    else msg += '同じ工程の設備はほかにありません。残業か、同じ設備の中で順番を入れ替えられないか見てください。';
-    out.push(msg);
+const withPrio = ids => ORDERS.map(x => ({ ...x, prio: ids.indexOf(x.id) + 1 }));
+
+function planOptions(pl) {
+  const L0 = lateCount(pl);
+  return pl.filter(o => o.status === '遅れ' && visibleOrder(o)).map(o => {
+    const opts = [];
+    const test = (orders, hours) => { const p = planAll(orders, hours); const me = p.find(x => x.id === o.id); return { ok: me.status !== '遅れ', late: lateCount(p), me }; };
+    const res = r => `${o.id} は ${md(dayDate(r.me.end))} に終わる見込み（遅れ ${L0} 件 → ${r.late} 件）`;
+    const cands = [];
+    o.steps.filter(s => s.rem > 0).forEach(s => {
+      pl.forEach(x => x.steps.filter(y => y.eq === s.eq && y.rem > 0 && y.start <= s.start + 1e-9).forEach(y => {
+        (PROCESSES[y.proc] || []).filter(e => e !== y.eq).forEach(e => cands.push({ id: x.id, proc: y.proc, to: e }));
+      }));
+    });
+    for (const c of cands) {
+      const r = test(ORDERS.map(x => x.id === c.id ? { ...x, eq: { ...(x.eq || {}), [c.proc]: c.to } } : x), planHours);
+      if (r.ok && r.late < L0) {
+        opts.push({ label: c.id === o.id ? `${o.id} の工程 ${c.proc} を ${c.to} に移す` : `先に流れる ${c.id} の工程 ${c.proc} を ${c.to} に移す`, result: res(r),
+          apply: () => { const x = ORDERS.find(y => y.id === c.id); x.eq = { ...(x.eq || {}), [c.proc]: c.to }; } });
+        break;
+      }
+    }
+    for (const h of [9, 10].filter(h => h > planHours)) {
+      const r = test(ORDERS, h);
+      if (r.ok) { opts.push({ label: `残業して1日${h}時間にする（+${h - planHours}時間）`, result: res(r), apply: () => { planHours = h; } }); break; }
+    }
+    const ids = prioIds(), idx = ids.indexOf(o.id);
+    for (let k = idx - 1; k >= 0; k--) {
+      const t = ids.filter(x => x !== o.id); t.splice(k, 0, o.id);
+      const r = test(withPrio(t), planHours);
+      if (r.ok && r.late < L0) { opts.push({ label: `${o.id} を ${ids[k]} より先に流す`, result: res(r), apply: () => renumber(t) }); break; }
+    }
+    const top = [o.id, ...ids.filter(x => x !== o.id)];
+    return { o, opts: opts.slice(0, 3), earliest: test(withPrio(top), planHours).me.end };
   });
-  const load = Object.entries(sch).map(([eq, l]) => [eq, l.length ? l[l.length - 1].end : 0]).sort((a, b) => a[1] - b[1]);
-  out.push(`いちばん空いているのは ${load[0][0]}（手持ち約${load[0][1].toFixed(1)}日分）です。`);
-  return out;
 }
+
+function addOrderPreview() {
+  if (!addOrd || !addOrd.part || !(addOrd.qty > 0) || !addOrd.due) return '<p class="note">品番・数量・納期を入れると、入るかどうかがここに出ます。</p>';
+  const D = workdaysUntil(addOrd.due);
+  if (D < 1) return '<p class="err">納期が今日より前です。</p>';
+  const missCt = PARTS[addOrd.part].route.filter(p => !CT[`${addOrd.part}|${p}`]);
+  const base = planAll(), L0 = lateCount(base);
+  const prio = Math.max(0, ...ORDERS.filter(o => o.D <= D).map(o => o.prio)) + 0.5;
+  const newO = { id: '新しい受注', part: addOrd.part, qty: addOrd.qty, done: {}, D, prio };
+  const pl = planAll([...ORDERS, newO]), me = pl.find(x => x.id === newO.id), late2 = lateCount(pl.filter(x => x.id !== newO.id));
+  const flow = me.steps.map(s => `${s.proc}（${eqLabel(s.eq)}）${md(dayDate(s.start + 0.001))}〜${md(dayDate(s.end))}`).join(' → ');
+  let html;
+  if (me.status !== '遅れ') {
+    html = `<div class="okbox"><b>この納期で入ります。</b>終わる見込み ${md(dayDate(me.end))}（納期 ${md(addWorkdays(D - 1))}・余裕 ${Math.floor(me.slack)}日）${late2 > L0 ? `<br>ただし、ほかの受注 ${late2 - L0} 件が遅れるようになります。` : ''}</div>`;
+  } else {
+    const topPl = planAll([...ORDERS, { ...newO, prio: 0 }]), top = topPl.find(x => x.id === newO.id), late3 = lateCount(topPl.filter(x => x.id !== newO.id));
+    html = `<div class="ngbox"><b>この納期では入りません。</b>終わる見込み ${md(dayDate(me.end))}（納期 ${md(addWorkdays(D - 1))}）。<br>
+      いちばん先に流すと ${md(dayDate(top.end))} に終わります${late3 > L0 ? `が、ほかの受注 ${late3 - L0} 件が遅れます` : ''}。お客様と納期を相談するか、残業を検討してください。</div>`;
+  }
+  return html + `<p class="note">流れの見込み：${flow}${missCt.length ? `<br>⚠ 工程 ${missCt.join('・')} のサイクルタイムが未登録なので、1個5分で計算しています（「品番・マスター」で入れられます）。` : ''}</p>`;
+}
+
 function renderPlan() {
-  const sch = schedule(ORDERS, planHours);
-  const all = Object.values(sch).flat().filter(visible);
-  const cnt = s => all.filter(o => o.status === s).length;
+  const pl = planAll();
+  const vis = pl.filter(visibleOrder);
+  planDecisions = planOptions(pl);
+  const cnt = s => vis.filter(o => o.status === s).length;
   const days = Array.from({ length: HORIZON }, (_, i) => addWorkdays(i));
   const cells = days.map((_, i) => `<div class="g-cell" style="left:${i / HORIZON * 100}%"></div>`).join('');
-  const noFilter = LEVELS.every(([k]) => FILTERS.plan[k] == null);
-  const eqs = Object.keys(sch).filter(eq => noFilter || sch[eq].some(visible));
-  const pos = (a, b) => `left:${Math.min(a, HORIZON) / HORIZON * 100}%;width:${Math.max(0, Math.min(b, HORIZON) - Math.min(a, HORIZON)) / HORIZON * 100}%`;
+  const pos = (a, b) => `left:${Math.min(a, HORIZON) / HORIZON * 100}%;width:${Math.max(0.4, (Math.min(b, HORIZON) - Math.min(a, HORIZON)) / HORIZON * 100)}%`;
+  const emps = EMPLOYEES.filter(e => !planF.team || e.team === planF.team);
+  const parts = Object.keys(PARTS).filter(p => ORDERS.some(o => o.part === p) && (!planF.team && !planF.emp || PARTS[p].route.some(q => { const m = mainRoute(p, q); return m && (!planF.team || teamOf(m.emp) === planF.team) && (!planF.emp || m.emp === planF.emp); })));
+  const slackTxt = o => o.status === '遅れ' ? `${Math.ceil(-o.slack - 1e-9)}日遅れ` : `余裕 ${Math.floor(o.slack + 1e-9)}日`;
+  const sel = (id, opts, v, all) => `<select id="${id}" class="fsel"><option value="">${all}</option>${opts.map(([val, label]) => `<option value="${esc(val)}" ${v === val ? 'selected' : ''}>${esc(label)}</option>`).join('')}</select>`;
+
+  const listView = `
+    <div class="tablewrap"><table class="list plan" style="min-width:1080px">
+      <tr><th style="width:74px">順番</th><th>受注</th><th>品番</th><th>数量</th><th>工程の進み</th>
+        <th style="width:34%"><div class="mt-head">${days.map((d, i) => `<span>${i === 0 || d.getDate() <= 3 && days[i - 1].getMonth() !== d.getMonth() ? md(d) : d.getDate()}<br>${WD[d.getDay()]}</span>`).join('')}</div></th>
+        <th>納期</th><th>終わる見込み</th><th>判定</th></tr>
+      ${vis.map(o => `<tr>
+        <td><div class="prio"><b>${o.prio}</b><span><button class="mv" data-pmv="${o.id}|-1" title="先に流す">▲</button><button class="mv" data-pmv="${o.id}|1" title="後に回す">▼</button></span></div></td>
+        <td style="white-space:nowrap"><b>${o.id}</b><div class="spec">${esc(o.cust)}</div></td>
+        <td>${o.part}<div class="spec">${PARTS[o.part].name}</div></td>
+        <td>${o.qty}</td>
+        <td><div class="pchips">${o.steps.map(s => { const d0 = (o.done || {})[s.proc] || 0; return `<span class="pchip ${d0 >= o.qty ? 'done' : ''}" style="border-color:${procColor(s.proc)}">${s.proc} ${d0 >= o.qty ? '済' : `${d0}/${o.qty}`}</span>`; }).join('')}</div></td>
+        <td><div class="mt">${cells}${o.steps.filter(s => s.rem > 0).map(s => `<div class="mt-bar" style="${pos(s.start, s.end)};background:${procColor(s.proc)}" title="${s.proc}（${eqLabel(s.eq)}）${md(dayDate(s.start + 0.001))}〜${md(dayDate(s.end))}">${s.proc}</div>`).join('')}
+          <div class="g-due" style="left:${Math.min(o.D, HORIZON) / HORIZON * 100}%;border-color:${COLOR[ST[o.status]]}" title="納期"></div></div></td>
+        <td>${md(addWorkdays(o.D - 1))}</td><td>${md(dayDate(o.end))}<div class="spec">${slackTxt(o)}</div></td>
+        <td><span class="badge b-${ST[o.status]}">${o.status}</span></td></tr>`).join('') || '<tr><td colspan="9" class="note">表示する受注がありません。</td></tr>'}
+    </table></div>
+    <p class="note">帯は工程ごとの色です（${PROC_ORDER.map(p => `<span class="pchip" style="border-color:${procColor(p)}">${p}</span>`).join(' ')}）。前の工程が終わってから次の工程が始まるので、品番ごとに段がずれて見えます。縦線が納期。▲▼で流す順番を変えられます。</p>`;
+
+  const equipView = `
+    <p class="note" style="margin-top:0">設備ごとに、どの受注のどの工程が入っているかの帯です。帯をつかんで別の帯の上に落とすと、流す順番が変わります。同じ工程の別の設備の行に落とすと、その設備に移ります。</p>
+    <div class="tablewrap"><div class="gantt">
+      <div class="g-row g-head"><div class="g-label"></div><div class="g-days">${days.map(d => `<div>${md(d)}<br>${WD[d.getDay()]}</div>`).join('')}</div></div>
+      ${EQUIPS.map(eq => {
+        const segs = pl.flatMap(o => o.steps.filter(s => s.eq === eq && s.rem > 0).map(s => ({ o, s })));
+        const load = segs.reduce((m, x) => Math.max(m, x.s.end), 0);
+        return `<div class="g-row g-eq2" data-eqrow="1" data-eq="${eq}">
+          <div class="g-label"><b>${eqLabel(eq)}</b> <span class="spec">工程 ${EQUIP_PROC[eq]}</span><div class="spec">稼働率 平均${Math.round((RATES[eq] ?? 0.7) * 100)}%・今日${Math.round(todayRate(eq) * 100)}%・手持ち約${load.toFixed(1)}日</div></div>
+          <div class="g-track">${cells}${segs.map(({ o, s }) => `<div class="g-bar ${visibleOrder(o) ? '' : 'faded'}" draggable="true" data-seg="${o.id}|${s.proc}" data-eq="${eq}" style="${pos(s.start, s.end)};background:${BAR[o.status]}" title="${o.id} ${PARTS[o.part].name} 工程${s.proc} 残${s.rem}個">${o.id.slice(2)} ${PARTS[o.part].name}</div>
+            <div class="g-setup" style="${pos(s.start, s.setupEnd)}"></div>`).join('')}</div></div>`;
+      }).join('')}
+    </div></div>
+    <p class="note">帯の色は受注の判定（緑＝間に合う、黄＝ぎりぎり、赤＝遅れる）。左の斜線は段取り${SETUP_MIN}分。</p>`;
+
   $('#app').innerHTML = `
-  <div class="card">${filterBar('plan', orderRows(), FILTERS.plan)}</div>
+  <div class="card">
+    <div class="toolbar">
+      <span class="spec">絞り込み</span>
+      ${sel('pf-team', TEAMS.map(t => [t, t]), planF.team, 'すべての係')}
+      <span class="spec">→</span>
+      ${sel('pf-emp', emps.map(e => [e.name, e.name]), planF.emp, planF.team ? `${planF.team}の全員` : 'すべての人')}
+      <span class="spec">→</span>
+      ${sel('pf-part', parts.map(p => [p, `${p} ${PARTS[p].name}`]), planF.part, 'すべての品番')}
+      <span style="flex:1"></span>
+      <label class="spec">1日の就業時間 <select id="hours" class="fsel">${[8, 9, 10].map(h => `<option value="${h}" ${h === planHours ? 'selected' : ''}>${h}時間${h > 8 ? `（残業${h - 8}h）` : ''}</option>`).join('')}</select></label>
+      <button class="chip dark sm" id="addOrderOpen">＋ 受注を足す</button>
+    </div>
+  </div>
+
+  ${addOrd ? `<div class="card" id="addOrder">
+    <h2>受注を足す <button class="mini" id="aoClose">閉じる</button></h2>
+    <div class="addrow">
+      <select id="ao-part" class="fsel"><option value="">品番を選ぶ</option>${Object.keys(PARTS).filter(p => PARTS[p].route.length).map(p => `<option value="${p}" ${addOrd.part === p ? 'selected' : ''}>${p} ${PARTS[p].name}（${PARTS[p].route.join('→')}）</option>`).join('')}</select>
+      <input id="ao-cust" placeholder="お客様" value="${esc(addOrd.cust || '')}" style="width:120px">
+      <input id="ao-qty" type="number" min="1" placeholder="数量" value="${addOrd.qty || ''}" style="width:90px"><span class="spec">個</span>
+      <span class="spec">納期</span><input id="ao-due" type="date" min="${isoDate(new Date())}" value="${addOrd.due || ''}">
+    </div>
+    <div style="margin-top:10px">${addOrderPreview()}</div>
+    <button class="mini dark" id="aoAdd" ${addOrd.part && addOrd.qty > 0 && addOrd.due ? '' : 'disabled'}>この受注を足す</button>
+  </div>` : ''}
+
   <div class="kpis">
-    <div class="kpi"><div class="v">${all.length}</div><div class="l">表示中の受注</div></div>
+    <div class="kpi"><div class="v">${vis.length}</div><div class="l">表示中の受注</div></div>
     <div class="kpi"><div class="v" style="color:var(--ok)">${cnt('間に合う')}</div><div class="l">間に合う</div></div>
     <div class="kpi"><div class="v" style="color:var(--warn)">${cnt('ぎりぎり')}</div><div class="l">ぎりぎり（余裕1日未満）</div></div>
     <div class="kpi ${cnt('遅れ') ? 'alert' : ''}"><div class="v">${cnt('遅れ')}</div><div class="l">遅れる見込み</div></div>
   </div>
-  <div class="card ai"><h2>今の見込み <span class="tag">AI・イメージ</span></h2><ul>${planAdvice(sch).map(a => `<li>${esc(a)}</li>`).join('')}</ul></div>
+
   <div class="card">
-    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <h2 style="margin:0">設備ごとの負荷（この先${HORIZON}稼働日）</h2>
-      <label class="note">1日の就業時間
-        <select id="hours" style="font:inherit;padding:8px;border-radius:8px;border:1px solid var(--line);margin-left:6px">
-          ${[8, 9, 10].map(h => `<option value="${h}" ${h === planHours ? 'selected' : ''}>${h}時間${h > 8 ? `（残業${h - 8}h）` : ''}</option>`).join('')}
-        </select></label>
-    </div>
-    <p class="note" style="margin-top:0">必要時間＝段取り${SETUP_MIN}分（帯の左の斜線）＋残数×サイクルタイム。1日に使える時間＝就業時間×その設備の稼働率。<br>
-      帯をつかんで上下にドラッグすると、同じ設備の中で順番が入れ替わります。同じ工程の別の設備の灰色の行に落とすと、その設備に納期順で入ります（▲▼でも動かせます）。</p>
-    <div class="tablewrap"><div class="gantt">
-      <div class="g-row g-head"><div class="g-label"></div><div class="g-days">${days.map(d => `<div>${md(d)}<br>${WD[d.getDay()]}</div>`).join('')}</div></div>
-      ${eqs.map(eq => {
-        const list = sch[eq], last = list.length ? list[list.length - 1].end : 0;
-        return `<div class="g-row g-eq" data-eqrow="1" data-eq="${eq}">
-            <div class="g-label"><b>${eq}</b> <span class="spec">工程 ${EQUIP_PROC[eq]}</span><div class="spec">稼働率 平均${Math.round(AVG_RATE[eq] * 100)}%・今日${Math.round(todayRate(eq) * 100)}%</div><div class="spec">手持ち 約${last.toFixed(1)}日分</div></div>
-            <div class="g-track">${cells}${list.map(o => `<div class="g-load ${visible(o) ? '' : 'dim'}" style="${pos(o.start, o.end)}"></div>`).join('')}</div>
-          </div>
-          ${list.filter(visible).map(o => `<div class="g-row g-lane" draggable="true" data-lane="${o.id}" data-eq="${eq}">
-            <div class="g-label"><span class="mvs"><button class="mv" data-mv="${o.id}" data-dir="-1" title="前へ">▲</button><button class="mv" data-mv="${o.id}" data-dir="1" title="後ろへ">▼</button></span>
-              <span class="handle">⠿</span><b>${o.id}</b> ${PARTS[o.part].name}<div class="spec">${teamOf(o.emp)} ${o.emp}・残${o.total - o.done}個</div></div>
-            <div class="g-track">${cells}<div class="g-bar" title="${o.id} ${PARTS[o.part].name} 残${o.total - o.done}個" style="${pos(o.start, o.end)};background:${BAR[o.status]}">${o.id.slice(2)} ${PARTS[o.part].name}</div>
-              <div class="g-setup" style="${pos(o.start, o.setupEnd)}" title="段取り"></div>
-              <div class="g-due" title="${o.id} の納期" style="left:${Math.min(o.D, HORIZON) / HORIZON * 100}%;border-color:${COLOR[ST[o.status]]}"></div></div>
-          </div>`).join('')}`;
-      }).join('')}
-    </div></div>
-    <p class="note">灰色の行＝その設備の仕事全体。その下の段＝受注ごとの帯。縦線＝納期。緑は間に合う、黄はぎりぎり、赤は遅れる見込み。<br>
-      ※ 工程のつながり（LNC → BR → K の順に流れること）はまだ見ていません。</p>
+    <h2>今日決めること</h2>
+    ${planDecisions.length === 0 ? '<div class="okbox">遅れる見込みの受注はありません。</div>' : planDecisions.map((dc, i) => `
+      <div class="deci">
+        <div class="deci-head"><span class="badge b-NG">遅れ</span> <b>${dc.o.id}</b>（${esc(dc.o.cust)}・${PARTS[dc.o.part].name} ${dc.o.qty}個）
+          納期 ${md(addWorkdays(dc.o.D - 1))} に対して、終わる見込み ${md(dayDate(dc.o.end))}（約${Math.ceil(-dc.o.slack - 1e-9)}日遅れ）</div>
+        ${dc.opts.length ? `<div class="deci-opts">${dc.opts.map((op, j) => `<button class="deci-btn" data-popt="${i}|${j}"><b>${esc(op.label)}</b><span>${esc(op.result)}</span></button>`).join('')}</div>`
+          : `<div class="ngbox">間に合わせる手が見つかりません。いちばん先に流しても ${md(dayDate(dc.earliest))} に終わります。お客様と納期の相談が必要です。</div>`}
+      </div>`).join('')}
+    <p class="note" style="margin-bottom:0">打ち手を押すと、その場で計算し直します。元に戻すときは▲▼や設備の帯で戻せます。</p>
   </div>
+
   <div class="card">
-    <h2>受注一覧（設備を変えると、すぐ計算し直します）</h2>
-    <div class="tablewrap"><table class="list">
-      <tr><th>受注</th><th>お客様</th><th>係・担当</th><th>設備</th><th>工程</th><th>品番</th><th>受注数</th><th>できた数</th><th>必要時間</th><th>納期</th><th>終わる見込み</th><th>判定</th></tr>
-      ${all.sort((a, b) => a.D - b.D).map(o => `<tr>
-        <td>${o.id}</td><td>${o.cust}</td><td>${o.emp}<br><span class="spec">${teamOf(o.emp)}</span></td>
-        <td><select data-move="${o.id}" style="font:inherit;padding:6px;border-radius:6px;border:1px solid var(--line)">${PROCESSES[o.proc].map(e => `<option ${e === o.equip ? 'selected' : ''}>${e}</option>`).join('')}</select></td>
-        <td>${o.proc}</td><td>${o.part}<br><span class="spec">${PARTS[o.part].name}</span></td>
-        <td>${o.total}</td><td>${o.done}<div class="prog"><div style="width:${o.done / o.total * 100}%"></div></div></td>
-        <td>${(o.need / 60).toFixed(1)}h</td><td>${md(addWorkdays(o.D - 1))}</td><td>${md(addWorkdays(Math.max(0, Math.ceil(o.end) - 1)))}</td>
-        <td><span class="badge b-${ST[o.status]}">${o.status}</span></td></tr>`).join('')}
-    </table></div>
+    <div class="modes" style="margin-bottom:12px">
+      <button class="${planView === 'list' ? 'on' : ''}" data-pview="list">納期の一覧（受注ごと）</button>
+      <button class="${planView === 'equip' ? 'on' : ''}" data-pview="equip">設備ごとの帯</button>
+    </div>
+    ${planView === 'list' ? listView : equipView}
   </div>`;
 }
 
@@ -974,30 +1136,39 @@ function setTpl(name) {
   tplDraft = clone(TEMPLATES[name]).map(it => ({ ...it, use: true, nom: it.type === 'num' ? '' : undefined }));
 }
 
-function renderMaster() {
-  const sel = FILTERS.master, rows = routeRows();
-  const { opts, rows: hit } = cascade(rows, sel);
-  const combos = Object.keys(PARTS).flatMap(part => PARTS[part].route.map(proc => [part, proc]))
-    .filter(([p, q]) => ROUTES.some(r => r.part === p && r.proc === q));
-  const noMain = combos.filter(([p, q]) => !ROUTES.some(r => r.part === p && r.proc === q && r.main));
-  const uses = (p, q) => reports.filter(r => r.part === p && r.proc === q).length;
-  const todo = combos.filter(([p, q]) => itemsFor(p, q).length === 0).sort((a, b) => uses(...b) - uses(...a));
-  const doneN = combos.length - todo.length;
-  const defEmp = sel.emp || (sel.team ? EMPLOYEES.find(e => e.team === sel.team).name : EMPLOYEES[0].name);
-  const defEquip = sel.equip || (sel.proc ? PROCESSES[sel.proc][0] : EQUIPS[0]);
-  const defPart = sel.part || Object.keys(PARTS)[0];
-  const [ep, eq] = masterEdit ? masterEdit.split('|') : [];
-  const eItems = masterEdit ? itemsFor(ep, eq) : [];
+let masterTab = 'parts', partQuery = '', onlyIssues = false, addStepFor = null, wiz = null, lastAdded = null;
+
+function stepInfo(part, proc) {
+  const routes = ROUTES.filter(r => r.part === part && r.proc === proc);
+  const main = routes.find(r => r.main);
+  const n = itemsFor(part, proc).length;
+  return { proc, routes, main, n, equip: main ? main.equip : routes[0] ? routes[0].equip : (PROCESSES[proc] || [])[0], st: !main ? 'red' : n === 0 ? 'amber' : 'green' };
+}
+function partStatus(part) {
+  const steps = PARTS[part].route.map(proc => stepInfo(part, proc));
+  const issues = steps.filter(s => s.st !== 'green').length + (steps.length ? 0 : 1);
+  return { steps, issues, ok: issues === 0 };
+}
+const ST_TXT = { green: '入力できる', amber: 'チェック項目なし', red: '主担当なし' };
+function empOptions(equip, selected) {
+  const users = [...new Set(ROUTES.filter(r => r.equip === equip).map(r => r.emp))];
+  const opt = n => `<option value="${esc(n)}" ${n === selected ? 'selected' : ''}>${esc(n)}（${teamOf(n)}）</option>`;
+  return `<option value="">担当を選ぶ</option>${users.length ? `<optgroup label="${eqLabel(equip)} を使っている人">${users.map(opt).join('')}</optgroup>` : ''}
+    ${TEAMS.map(t => `<optgroup label="${t}">${EMPLOYEES.filter(e => e.team === t && !users.includes(e.name)).map(e => opt(e.name)).join('')}</optgroup>`).join('')}`;
+}
+
+function ckEditorHtml() {
+  const [ep, eq] = masterEdit.split('|');
+  const eItems = itemsFor(ep, eq);
   const numOpt = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1];
-  const queued = masterEdit ? QUEUE.find(q => q.part === ep && q.proc === eq) : null;
-  const copyList = Object.keys(CHECKS).filter(k => k !== masterEdit && CHECKS[k].length)
+  const queued = QUEUE.find(q => q.part === ep && q.proc === eq);
+  const copyList = Object.keys(CHECKS).filter(k => k !== masterEdit && CHECKS[k].length && PARTS[k.split('|')[0]])
     .sort((a, b) => (b.split('|')[1] === eq) - (a.split('|')[1] === eq));
   const MODES = [['tpl', 'ひな形から作る'], ['copy', '似た品番から写す'], ['ai', '紙の写真から（AI 下書き）'], ['table', '表で1行ずつ直す']];
-
-  let modeHtml = '';
-  if (masterEdit && ckMode === 'tpl') {
-    modeHtml = `
-    <p class="note">工程ごとの「ひな形」を選び、<b>使う項目に印を付けて、基準値だけ入れれば</b>できあがります。100種類あっても、項目の組み合わせはひな形の数だけで足ります。</p>
+  let body = '';
+  if (ckMode === 'tpl') {
+    body = `
+    <p class="note">工程ごとの「ひな形」を選び、<b>使う項目に印を付けて、基準値だけ入れれば</b>できあがります。</p>
     <div class="chips" style="margin-bottom:10px">${Object.keys(TEMPLATES).map(t => `<button class="chip sm ${tplSel === t ? 'on' : ''}" data-tpl="${t}">${t}<small>${TEMPLATES[t].length}項目</small></button>`).join('')}</div>
     ${tplDraft ? `<div class="tablewrap"><table class="list ck" style="min-width:760px">
       <tr><th>使う</th><th>項目</th><th>表示</th><th>基準（ここだけ入れる）</th><th>許容差</th><th>測る道具</th></tr>
@@ -1011,16 +1182,16 @@ function renderMaster() {
     </table></div>
     <div style="margin-top:10px"><button class="mini dark" id="tplApply">この内容で作る</button>
       <span class="note">　許容差・刻みはひな形のまま入ります。違うものだけ、あとで「表で1行ずつ直す」で直します。</span></div>` : ''}`;
-  } else if (masterEdit && ckMode === 'copy') {
+  } else if (ckMode === 'copy') {
     const src = copyFrom && CHECKS[copyFrom];
-    modeHtml = `
+    body = `
     <p class="note">できあがっている品番×工程から写して、<b>違うところ（基準値など）だけ直します</b>。同じ工程のものが上に並びます。</p>
     <div class="addrow"><select id="copySrc"><option value="">写す元を選ぶ</option>${copyList.map(k => { const [p, q] = k.split('|'); return `<option value="${k}" ${copyFrom === k ? 'selected' : ''}>${p} ${PARTS[p].name} × 工程 ${q}（${CHECKS[k].length}項目）</option>`; }).join('')}</select>
       <button class="mini dark" id="copyApply" ${src ? '' : 'disabled'}>写す</button></div>
     ${src ? `<div class="preview" style="margin-top:10px">${src.map(it => itemRow(it, {}, true)).join('')}</div>` : ''}`;
-  } else if (masterEdit && ckMode === 'ai') {
+  } else if (ckMode === 'ai') {
     const allOk = aiDraft && aiDraft.every(it => !it.use || it.checked);
-    modeHtml = `
+    body = `
     <p class="note"><b>今の紙のチェックシートを写真に撮るだけ</b>で、AI が項目・規格・測る道具を表に下書きします。管理者は、<b>黄色の「要確認」だけ紙と見比べて</b>登録します。</p>
     ${queued ? `<div class="warnbox">現場の ${queued.emp} さんが ${queued.time} に、この品番×工程の紙のシートを送ってくれています。</div>` : ''}
     ${!aiImg ? `<div class="addrow">
@@ -1033,7 +1204,7 @@ function renderMaster() {
           <div class="it-head"><input type="checkbox" data-ad="${i}|use" ${it.use ? 'checked' : ''} title="使う" style="width:20px;height:20px">
             <span class="ball">${it.n}</span><div class="it-name"><input data-ad="${i}|name" value="${esc(it.name)}" style="font:inherit;width:120px;padding:4px 6px;border:1px solid var(--line);border-radius:6px">
             <div class="spec">${esc(specText(it))}・${esc(it.tool)}</div></div>
-            ${it.conf === 'low' ? `<span class="badge b-注意">要確認</span>` : '<span class="badge b-OK">読み取り済み</span>'}</div>
+            ${it.conf === 'low' ? '<span class="badge b-注意">要確認</span>' : '<span class="badge b-OK">読み取り済み</span>'}</div>
           ${it.type === 'num' ? `<div class="addrow" style="margin:8px 0 0 30px">
             <span class="spec">基準</span><input type="number" step="any" data-ad="${i}|nom" value="${it.nom}" style="width:90px">
             <span class="spec">下</span><input type="number" step="any" data-ad="${i}|tm" value="${it.tm}" style="width:80px">
@@ -1046,10 +1217,9 @@ function renderMaster() {
       </div>
     </div>
     <p class="note">※ プロトタイプの読み取り結果は見本です。本番では、写真を AI に読ませて、この表を作ります。</p>`}`;
-  } else if (masterEdit) {
-    modeHtml = `
-    <p class="note">寸法は「基準」と「下・上の許容差」を入れると、規格の表示と OK・注意・NG の判定が自動で決まります。
-      「1回の刻み」はタブレットの ± ボタン1回分（測る道具の目盛りに合わせます）。「注意の幅」は許容差の内側の何％を「注意」にするか。</p>
+  } else {
+    body = `
+    <p class="note">寸法は「基準」と「下・上の許容差」を入れると、規格の表示と OK・注意・NG の判定が自動で決まります。「1回の刻み」はタブレットの ± ボタン1回分。「注意の幅」は許容差の内側の何％を「注意」にするか。</p>
     <div class="tablewrap"><table class="list ck" style="min-width:1180px">
       <tr><th>番号</th><th>項目</th><th>種類</th><th>表示</th><th>基準</th><th>下の許容差（−）</th><th>上の許容差（＋）</th><th>1回の刻み</th><th>注意の幅%</th><th>測る道具</th><th></th></tr>
       ${eItems.map((it, i) => { const num = it.type === 'num'; const d = num ? '' : 'disabled'; return `<tr>
@@ -1067,84 +1237,253 @@ function renderMaster() {
     </table></div>
     <div style="margin-top:10px"><button class="mini dark" id="addItem">項目を1行足す</button></div>
     <h3>タブレットでの見え方</h3>
-    <div class="preview">${eItems.length ? eItems.map(it => itemRow(it, {}, true)).join('') : '<p class="note">項目がありません。上の「ひな形から作る」「似た品番から写す」「紙の写真から」で作れます。</p>'}</div>
-    <p class="note">図面の丸番号は「番号」で結びつきます。図面に番号を置く作業は、本番では AI が下書きして人が確認する想定です。</p>`;
+    <div class="preview">${eItems.length ? eItems.map(it => itemRow(it, {}, true)).join('') : '<p class="note">項目がありません。上の「ひな形から作る」「似た品番から写す」「紙の写真から」で作れます。</p>'}</div>`;
   }
+  return `<div class="modes">${MODES.map(([m, label]) => `<button class="${ckMode === m ? 'on' : ''}" data-ckmode="${m}">${label}</button>`).join('')}</div>${body}`;
+}
 
-  $('#app').innerHTML = `
-  <div class="card">
-    <h2>決まりの修正</h2>
-    <p class="note" style="margin-top:0">「この人が、この設備で、この品番のこの工程をやる」という決まりの一覧です。<b>左の列で選ぶと、右の列が絞り込まれます。</b><br>
-      ここを直すと、タブレットの選択肢・QRの自動入力・チェック項目に、すぐ反映されます。</p>
-    ${noMain.length ? `<div class="warnbox">${noMain.map(([p, q]) => `⚠ ${p} ${PARTS[p].name} × 工程 ${q} に主担当がいません（QRを読んでも担当が入りません）`).join('<br>')}</div>` : ''}
-    <div class="tablewrap"><div class="mcols" style="min-width:760px">${LEVELS.map(([k, label], i) => `
-      <div class="mcol"><div class="mhead"><b>${label}</b>${i < 4 ? '<span>▶</span>' : ''}</div>
-        <button class="mitem ${sel[k] == null ? 'on' : ''}" data-f="master|${k}|"><span>すべて</span><span class="cnt">${opts[k].reduce((s, [, n]) => s + n, 0)}</span></button>
-        ${opts[k].map(([v, n]) => `<button class="mitem ${sel[k] === v ? 'on' : ''}" data-f="master|${k}|${esc(v)}"><span>${k === 'part' ? `${v}<small>${PARTS[v].name}</small>` : k === 'emp' ? `${v}<small>${teamOf(v)}</small>` : k === 'equip' ? `${eqLabel(v)}<small>工程 ${EQUIP_PROC[v]}</small>` : v}</span><span class="cnt">${n}</span></button>`).join('')}
-      </div>`).join('')}</div></div>
-  </div>
-
-  <div class="card">
-    <h2>チェック項目の登録状況（紙からの移行）</h2>
-    <div class="progress"><div style="width:${combos.length ? doneN / combos.length * 100 : 0}%"></div></div>
-    <p class="note" style="margin:6px 0 12px">品番×工程 ${combos.length} 件のうち <b>${doneN} 件</b> がタブレットで入力できます（残り ${todo.length} 件は紙のまま）。<br>
-      <b>全部を一度に作らなくて大丈夫です。</b>現場で「項目がまだない」品番に当たったら、作業者がその場で紙のシートを撮って送ります。
-      届いたものと、よく作る品番から順に登録すれば、紙が1枚ずつ減っていきます。</p>
-    ${QUEUE.length ? `<div class="group-label">現場から届いた紙のシート（${QUEUE.length}件）</div>
-      ${QUEUE.map(q => `<div class="ngrow" style="border-color:#fde68a;background:#fffbeb">
-        <div><span class="badge b-注意">登録待ち</span>　${q.part} ${PARTS[q.part].name} × 工程 ${q.proc}　<span class="spec">${q.emp} さん・${q.time}${q.img || QIMG[q.id] ? '・写真あり' : ''}</span></div>
-        <button class="mini dark" data-fromqueue="${q.id}">写真から作る</button></div>`).join('')}` : ''}
-    ${todo.length ? `<div class="group-label">まだ項目がない品番×工程（日報の多い順）</div>
-      <div class="tablewrap"><table class="list" style="min-width:560px">
-        <tr><th>品番</th><th>工程</th><th>今日の日報</th><th></th></tr>
-        ${todo.map(([p, q]) => `<tr><td>${p} ${PARTS[p].name}</td><td>${q}</td><td>${uses(p, q)}件</td><td><button class="mini dark" data-editck="${p}|${q}">作る</button></td></tr>`).join('')}
-      </table></div>` : '<p class="done">すべての品番×工程にチェック項目があります。</p>'}
-  </div>
-
-  <div class="card">
-    <h2>当てはまる決まり（${hit.length}件）</h2>
-    <div class="tablewrap"><table class="list">
-      <tr><th>係</th><th>人</th><th>設備</th><th>工程</th><th>品番</th><th>主担当</th><th>チェック項目</th><th></th></tr>
-      ${hit.map(r => `<tr>
-        <td>${r.team}</td><td>${r.emp}</td><td>${eqLabel(r.equip)}</td><td>${r.proc}</td><td>${r.part}<br><span class="spec">${PARTS[r.part].name}</span></td>
-        <td>${r.main ? '<span class="badge b-OK">主担当（QRで入る人）</span>' : `<button class="mini" data-setmain="${r.id}">主担当にする</button>`}</td>
-        <td>${itemsFor(r.part, r.proc).length}項目 <button class="mini ${masterEdit === `${r.part}|${r.proc}` ? 'dark' : ''}" data-editck="${r.part}|${r.proc}">直す</button></td>
-        <td><button class="mini del" data-delroute="${r.id}">外す</button></td></tr>`).join('') || '<tr><td colspan="8" class="note">当てはまる決まりはありません。下で足せます。</td></tr>'}
-    </table></div>
-    <h3>決まりを足す</h3>
-    <p class="note" style="margin-top:0">上で選んだ内容が最初から入っています。工程は設備から自動で決まります。</p>
-    <div class="addrow">
-      <select id="addEmp">${TEAMS.map(t => `<optgroup label="${t}">${EMPLOYEES.filter(e => e.team === t).map(e => `<option ${e.name === defEmp ? 'selected' : ''}>${e.name}</option>`).join('')}</optgroup>`).join('')}</select>
-      <span>が</span>
-      <select id="addEquip">${EQUIPS.map(e => `<option value="${e}" ${e === defEquip ? 'selected' : ''}>${eqLabel(e)}（工程 ${EQUIP_PROC[e]}）</option>`).join('')}</select>
-      <span>で</span>
-      <select id="addPart">${Object.keys(PARTS).map(p => `<option value="${p}" ${p === defPart ? 'selected' : ''}>${p} ${PARTS[p].name}</option>`).join('')}</select>
-      <span>をやる</span>
-      <button class="mini dark" id="addRoute">この決まりを足す</button>
+function stepPanelHtml(part, proc) {
+  const s = stepInfo(part, proc), key = `${part}|${proc}`, idx = PARTS[part].route.indexOf(proc);
+  return `<div class="spanel">
+    <div class="spanel-head"><b>工程 ${idx + 1}：${proc}</b> <span class="badge ${s.st === 'green' ? 'b-OK' : s.st === 'amber' ? 'b-注意' : 'b-NG'}">${ST_TXT[s.st]}</span>
+      <span style="flex:1"></span><button class="mini" data-closepanel="1">閉じる</button></div>
+    <div class="row3">
+      <div><div class="group-label">設備</div><select class="fsel" data-stepeq="${key}">${(PROCESSES[proc] || []).map(e => `<option value="${e}" ${e === s.equip ? 'selected' : ''}>${eqLabel(e)}</option>`).join('')}</select></div>
+      <div><div class="group-label">サイクルタイム（1個あたり・分）</div><input class="fsel" type="number" step="any" min="0" data-ct="${key}" value="${CT[key] ?? ''}" placeholder="例 6" style="width:120px"><span class="spec"> 生産管理の計算に使います</span></div>
+      <div><div class="group-label">工程の並び</div><div class="addrow"><button class="mini" data-stepmv="${key}|-1" ${idx === 0 ? 'disabled' : ''}>← 前へ</button><button class="mini" data-stepmv="${key}|1" ${idx === PARTS[part].route.length - 1 ? 'disabled' : ''}>後ろへ →</button><button class="mini del" data-delstep="${key}">この工程を外す</button></div></div>
     </div>
-  </div>
-
-  ${masterEdit ? `<div class="card" id="ckEditor">
-    <h2>チェック項目：${ep} ${PARTS[ep].name} × 工程 ${eq}　<span class="spec">${eItems.length}項目</span> <button class="mini" id="closeCk">閉じる</button></h2>
-    <div class="modes">${MODES.map(([m, label]) => `<button class="${ckMode === m ? 'on' : ''}" data-ckmode="${m}">${label}</button>`).join('')}</div>
-    ${modeHtml}
-  </div>` : ''}
-
-  <div class="card noprint">
-    <button class="mini del" id="resetAll">この端末の決まり・日報を最初の状態に戻す</button>
+    <div class="group-label">担当（★の人が、QRを読んだときに入る主担当）</div>
+    <div class="chips">${s.routes.map(r => `<span class="person ${r.main ? 'main' : ''}">${r.main ? '★ ' : ''}${r.emp}<small>${teamOf(r.emp)}</small>
+      ${r.main ? '' : `<button class="mini" data-setmain="${r.id}">主担当にする</button>`}<button class="mini del" data-delroute="${r.id}">外す</button></span>`).join('') || '<span class="note">まだ担当がいません。下で足してください。</span>'}</div>
+    <div class="addrow" style="margin-top:8px"><select class="fsel" id="stepAddEmp">${empOptions(s.equip)}</select><button class="mini dark" data-stepaddemp="${key}">担当を足す</button></div>
+    <h3>チェック項目（${s.n}項目）</h3>
+    ${ckEditorHtml()}
   </div>`;
 }
 
+function partCardHtml(part) {
+  const { steps, issues, ok } = partStatus(part);
+  const people = [...new Set(ROUTES.filter(r => r.part === part).map(r => r.emp))];
+  const orders = ORDERS.filter(o => o.part === part).length;
+  return `<div class="pcard" data-search="${esc(`${part} ${PARTS[part].name} ${people.join(' ')}`.toLowerCase())}">
+    <div class="pc-head">
+      <div><span class="big2">${part}</span> <span style="font-size:17px">${PARTS[part].name}</span>
+        <span class="badge ${ok ? 'b-OK' : 'b-注意'}">${ok ? '入力できます' : `あと${issues}か所`}</span>
+        ${orders ? `<span class="spec">　受注 ${orders}件</span>` : ''}</div>
+      <div class="addrow"><button class="mini" data-addstep="${part}">＋ 工程を足す</button><button class="mini" data-qrpart="${part}">QRを印刷</button></div>
+    </div>
+    <div class="flow">${steps.map((s, i) => `${i ? '<span class="arrow">→</span>' : ''}
+      <button class="pbox st-${s.st} ${masterEdit === `${part}|${s.proc}` ? 'sel' : ''}" data-pbox="${part}|${s.proc}">
+        <span class="pnum">${i + 1}</span><b>${s.proc}</b><span class="spec">${eqLabel(s.equip)}</span>
+        <span class="ppl">${s.routes.map(r => `${r.main ? '★' : ''}${r.emp.split(' ')[0]}`).join('・') || '担当なし'}</span>
+        <span class="pmeta">${s.n ? `項目 ${s.n}` : '項目なし'}・${CT[`${part}|${s.proc}`] ?? '−'}分/個</span>
+        <span class="pst">${ST_TXT[s.st]}</span>
+      </button>`).join('') || '<span class="note">工程がありません。「＋ 工程を足す」から足してください。</span>'}</div>
+    ${addStepFor === part ? `<div class="addrow" style="margin-top:10px"><span class="spec">足す工程：</span>${PROC_ORDER.filter(p => !PARTS[part].route.includes(p)).map(p => `<button class="chip sm" data-addstepproc="${part}|${p}">${p}<small>${(PROCESSES[p] || []).map(eqLabel).join('・')}</small></button>`).join('')}<button class="mini" data-addstep="">やめる</button></div>` : ''}
+    ${masterEdit && masterEdit.split('|')[0] === part && PARTS[part].route.includes(masterEdit.split('|')[1]) ? stepPanelHtml(part, masterEdit.split('|')[1]) : ''}
+  </div>`;
+}
+
+function wizardHtml() {
+  const w = wiz;
+  const copyables = proc => Object.keys(CHECKS).filter(k => k.split('|')[1] === proc && CHECKS[k].length && PARTS[k.split('|')[0]]);
+  const codeOk = w.code.trim() && !PARTS[w.code.trim()], nameOk = !!w.name.trim();
+  const stepsOk = w.steps.length > 0 && w.steps.every(s => s.emp && s.equip);
+  const nCopy = w.steps.filter(s => s.items && s.items.startsWith('copy:')).length;
+  const check = (ok, label, sub = '') => `<li class="${ok ? 'ok' : ''}"><span>${ok ? '✓' : '・'}</span>${label}${sub ? `<small>${sub}</small>` : ''}</li>`;
+  let body = '';
+  if (w.step === 1) {
+    body = `
+      <div class="group-label" style="margin-top:0">品番</div><input class="fsel big-in" id="wz-code" value="${esc(w.code)}" placeholder="例 4E30210080">
+      ${w.code.trim() && PARTS[w.code.trim()] ? '<div class="err">この品番はもうあります</div>' : ''}
+      <div class="group-label">名前</div><input class="fsel big-in" id="wz-name" value="${esc(w.name)}" placeholder="例 カラー">
+      <div class="group-label">図面</div>
+      <select class="fsel" id="wz-draw"><option value="">まだない（あとで付ける）</option>${Object.entries({ boss: 'ボスの図面を使う（見本）', flange: 'フランジの図面を使う（見本）', shaft: 'シャフトの図面を使う（見本）' }).map(([k, v]) => `<option value="${k}" ${w.drawing === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <p class="note">本番では、図面の PDF や写真をここで付けます。</p>
+      <div class="addrow" style="margin-top:14px"><button class="mini" id="wzCancel">やめる</button><button class="mini dark" id="wzNext" ${codeOk && nameOk ? '' : 'disabled'}>次へ：工程と担当</button></div>`;
+  } else if (w.step === 2) {
+    body = `
+      <p class="note" style="margin-top:0">この品番が通る工程を、<b>流れる順に</b>押してください。工程ごとに設備を選ぶと、その設備を使っている人が上に出ます。</p>
+      <div class="chips">${PROC_ORDER.map(p => `<button class="chip sm" data-wzproc="${p}" ${w.steps.some(s => s.proc === p) ? 'disabled' : ''}>＋ ${p}<small>${(PROCESSES[p] || []).map(eqLabel).join('・')}</small></button>`).join('')}</div>
+      ${w.steps.length ? `<div class="flow" style="margin-top:12px">${w.steps.map((s, i) => `${i ? '<span class="arrow">→</span>' : ''}<span class="wzchip">${i + 1}. ${s.proc}</span>`).join('')}</div>
+      <div class="tablewrap"><table class="list" style="min-width:720px;margin-top:8px">
+        <tr><th>順</th><th>工程</th><th>設備</th><th>主担当（QRで入る人）</th><th>サイクルタイム（分/個）</th><th></th></tr>
+        ${w.steps.map((s, i) => `<tr><td>${i + 1}</td><td><b>${s.proc}</b></td>
+          <td><select class="fsel" data-wzf="${i}|equip">${(PROCESSES[s.proc] || []).map(e => `<option value="${e}" ${e === s.equip ? 'selected' : ''}>${eqLabel(e)}</option>`).join('')}</select></td>
+          <td><select class="fsel" data-wzf="${i}|emp" style="${s.emp ? '' : 'background:#fef3c7'}">${empOptions(s.equip, s.emp)}</select></td>
+          <td><input class="fsel" type="number" step="any" min="0" data-wzf="${i}|ct" value="${s.ct}" style="width:90px"></td>
+          <td><button class="mini del" data-wzdel="${i}">外す</button></td></tr>`).join('')}
+      </table></div>` : ''}
+      <div class="addrow" style="margin-top:14px"><button class="mini" id="wzBack">戻る</button><button class="mini dark" id="wzNext" ${stepsOk ? '' : 'disabled'}>次へ：チェック項目</button></div>`;
+  } else {
+    body = `
+      <p class="note" style="margin-top:0">工程ごとに、チェック項目の作り方を選びます。<b>似た品番があれば写す</b>のがいちばん早いです。ないときは「あとで作る」にして、品番のカードからひな形か紙の写真で作ります。</p>
+      <table class="list" style="min-width:0">
+        <tr><th>工程</th><th>チェック項目</th></tr>
+        ${w.steps.map((s, i) => `<tr><td><b>${s.proc}</b><div class="spec">${eqLabel(s.equip)}・${s.emp}</div></td>
+          <td><select class="fsel" data-wzf="${i}|items" style="min-width:320px">
+            <option value="later" ${s.items === 'later' ? 'selected' : ''}>あとで作る（ひな形・紙の写真から）</option>
+            ${copyables(s.proc).map(k => { const [p] = k.split('|'); return `<option value="copy:${k}" ${s.items === `copy:${k}` ? 'selected' : ''}>写す：${p} ${PARTS[p].name}（${CHECKS[k].length}項目）</option>`; }).join('')}
+          </select></td></tr>`).join('')}
+      </table>
+      <div class="addrow" style="margin-top:14px"><button class="mini" id="wzBack">戻る</button><button class="mini dark" id="wzDone">この品番を登録する</button></div>`;
+  }
+  return `<div class="card wiz">
+    <h2>品番を足す</h2>
+    <div class="wz-steps">${['品番と名前', '工程と担当', 'チェック項目'].map((t, i) => `<span class="${w.step === i + 1 ? 'on' : w.step > i + 1 ? 'done' : ''}">${i + 1}. ${t}</span>`).join('<b>›</b>')}</div>
+    <div class="wz-grid">
+      <div>${body}</div>
+      <div class="wz-side"><div class="group-label" style="margin-top:0">入力できる状態か</div><ul class="ready">
+        ${check(codeOk && nameOk, '品番と名前', w.code ? `${esc(w.code)} ${esc(w.name)}` : '')}
+        ${check(w.steps.length > 0, '工程', w.steps.map(s => s.proc).join(' → '))}
+        ${check(stepsOk, 'どの工程にも主担当がいる')}
+        ${check(w.steps.length > 0 && nCopy === w.steps.length, 'チェック項目', w.step < 3 ? '' : `写す ${nCopy}・あとで ${w.steps.length - nCopy}`)}
+        ${check(false, 'QR', '登録すると印刷できます')}
+      </ul></div>
+    </div>
+  </div>`;
+}
+
+function renderMaster() {
+  const TABS = [['parts', '品番'], ['assign', '担当の一覧'], ['people', '人・設備'], ['paper', '紙からの移行']];
+  let content = '';
+  if (masterTab === 'parts') {
+    const parts = Object.keys(PARTS).filter(p => !onlyIssues || !partStatus(p).ok);
+    const allIssues = Object.keys(PARTS).filter(p => !partStatus(p).ok).length;
+    content = `
+    ${lastAdded && PARTS[lastAdded] ? `<div class="okbox" style="margin-bottom:14px">品番 <b>${lastAdded} ${PARTS[lastAdded].name}</b> を登録しました。
+      <button class="mini" data-qrpart="${lastAdded}">QRを印刷する</button> <button class="mini" id="goAddOrder" data-part="${lastAdded}">この品番の受注を足す</button></div>` : ''}
+    ${wiz ? wizardHtml() : ''}
+    <div class="card">
+      <div class="toolbar">
+        <input id="partSearch" class="fsel" placeholder="品番・名前・担当で探す" value="${esc(partQuery)}" style="min-width:240px">
+        <button class="chip sm ${onlyIssues ? 'on' : ''}" id="onlyIssues">まだ入力できない品番だけ（${allIssues}）</button>
+        <span style="flex:1"></span>
+        ${wiz ? '' : '<button class="chip dark" id="wizOpen">＋ 品番を足す</button>'}
+      </div>
+      <div class="legend2"><span class="pbox-mini st-green"></span>入力できる <span class="pbox-mini st-amber"></span>チェック項目なし <span class="pbox-mini st-red"></span>主担当なし　<span class="spec">工程の箱を押すと、その場で設備・担当・チェック項目を直せます</span></div>
+    </div>
+    ${parts.map(partCardHtml).join('') || '<div class="card note">当てはまる品番はありません。</div>'}`;
+  } else if (masterTab === 'assign') {
+    const sel = FILTERS.master, rows = routeRows();
+    const { opts, rows: hit } = cascade(rows, sel);
+    const noMain = Object.keys(PARTS).flatMap(p => PARTS[p].route.map(q => [p, q])).filter(([p, q]) => !ROUTES.some(r => r.part === p && r.proc === q && r.main));
+    const defEmp = sel.emp || (sel.team ? EMPLOYEES.find(e => e.team === sel.team).name : EMPLOYEES[0].name);
+    const defEquip = sel.equip || (sel.proc ? PROCESSES[sel.proc][0] : EQUIPS[0]);
+    const defPart = sel.part || Object.keys(PARTS)[0];
+    content = `
+    <div class="card">
+      <p class="note" style="margin-top:0">「この人が、この設備で、この品番のこの工程をやる」の一覧です。<b>左の列で選ぶと、右の列が絞り込まれます。</b>人から探したいときに使います。</p>
+      ${noMain.length ? `<div class="warnbox">${noMain.map(([p, q]) => `⚠ ${p} ${PARTS[p].name} × 工程 ${q} に主担当がいません`).join('<br>')}</div>` : ''}
+      <div class="tablewrap"><div class="mcols" style="min-width:760px">${LEVELS.map(([k, label], i) => `
+        <div class="mcol"><div class="mhead"><b>${label}</b>${i < 4 ? '<span>▶</span>' : ''}</div>
+          <button class="mitem ${sel[k] == null ? 'on' : ''}" data-f="master|${k}|"><span>すべて</span><span class="cnt">${opts[k].reduce((s, [, n]) => s + n, 0)}</span></button>
+          ${opts[k].map(([v, n]) => `<button class="mitem ${sel[k] === v ? 'on' : ''}" data-f="master|${k}|${esc(v)}"><span>${k === 'part' ? `${v}<small>${PARTS[v] ? PARTS[v].name : ''}</small>` : k === 'emp' ? `${v}<small>${teamOf(v)}</small>` : k === 'equip' ? `${eqLabel(v)}<small>工程 ${EQUIP_PROC[v]}</small>` : v}</span><span class="cnt">${n}</span></button>`).join('')}
+        </div>`).join('')}</div></div>
+    </div>
+    <div class="card">
+      <h2>当てはまる担当（${hit.length}件）</h2>
+      <div class="tablewrap"><table class="list">
+        <tr><th>係</th><th>人</th><th>設備</th><th>工程</th><th>品番</th><th>主担当</th><th>チェック項目</th><th></th></tr>
+        ${hit.map(r => `<tr><td>${r.team}</td><td>${r.emp}</td><td>${eqLabel(r.equip)}</td><td>${r.proc}</td><td>${r.part}<br><span class="spec">${PARTS[r.part] ? PARTS[r.part].name : ''}</span></td>
+          <td>${r.main ? '<span class="badge b-OK">主担当</span>' : `<button class="mini" data-setmain="${r.id}">主担当にする</button>`}</td>
+          <td>${itemsFor(r.part, r.proc).length}項目 <button class="mini" data-editck="${r.part}|${r.proc}">品番カードで直す</button></td>
+          <td><button class="mini del" data-delroute="${r.id}">外す</button></td></tr>`).join('') || '<tr><td colspan="8" class="note">当てはまる担当はありません。</td></tr>'}
+      </table></div>
+      <h3>担当を足す</h3>
+      <div class="addrow">
+        <select id="addEmp">${TEAMS.map(t => `<optgroup label="${t}">${EMPLOYEES.filter(e => e.team === t).map(e => `<option ${e.name === defEmp ? 'selected' : ''}>${e.name}</option>`).join('')}</optgroup>`).join('')}</select><span>が</span>
+        <select id="addEquip">${EQUIPS.map(e => `<option value="${e}" ${e === defEquip ? 'selected' : ''}>${eqLabel(e)}（工程 ${EQUIP_PROC[e]}）</option>`).join('')}</select><span>で</span>
+        <select id="addPart">${Object.keys(PARTS).map(p => `<option value="${p}" ${p === defPart ? 'selected' : ''}>${p} ${PARTS[p].name}</option>`).join('')}</select><span>をやる</span>
+        <button class="mini dark" id="addRoute">この担当を足す</button>
+      </div>
+    </div>`;
+  } else if (masterTab === 'people') {
+    const used = n => ROUTES.filter(r => r.emp === n).length;
+    const eqUsed = e => ROUTES.filter(r => r.equip === e).length;
+    content = `
+    <div class="card">
+      <h2>係と人</h2>
+      <div class="tablewrap"><table class="list" style="min-width:560px">
+        <tr><th>係</th><th>人</th><th>担当している工程</th><th></th></tr>
+        ${EMPLOYEES.map(e => `<tr><td>${e.team}</td><td>${e.name}</td><td>${used(e.name)}件</td>
+          <td><button class="mini del" data-delemp="${esc(e.name)}" ${used(e.name) ? 'disabled title="担当を外してから"' : ''}>外す</button></td></tr>`).join('')}
+      </table></div>
+      <h3>人を足す</h3>
+      <div class="addrow"><input id="pp-name" placeholder="名前（例 小林 誠）" style="width:160px">
+        <select id="pp-team">${TEAMS.map(t => `<option>${t}</option>`).join('')}<option value="__new">新しい係…</option></select>
+        <input id="pp-newteam" placeholder="新しい係の名前" style="width:120px">
+        <button class="mini dark" id="ppAdd">足す</button></div>
+      <p class="note">担当している工程がある人は外せません。先に品番カードで担当を外してください。</p>
+    </div>
+    <div class="card">
+      <h2>工程と設備</h2>
+      <div class="tablewrap"><table class="list" style="min-width:640px">
+        <tr><th>工程</th><th>設備</th><th>稼働率（平均）</th><th>使っている担当</th><th></th></tr>
+        ${PROC_ORDER.map(p => (PROCESSES[p].length ? PROCESSES[p] : [null]).map((e, i) => `<tr>
+          <td>${i === 0 ? `<b>${p}</b>` : ''}</td><td>${e ? eqLabel(e) : '<span class="note">設備なし</span>'}</td>
+          <td>${e ? `<input type="number" min="1" max="100" data-rate="${e}" value="${Math.round((RATES[e] ?? 0.7) * 100)}" style="width:70px"> %` : ''}</td>
+          <td>${e ? `${eqUsed(e)}件` : ''}</td>
+          <td>${e ? `<button class="mini del" data-deleq="${e}" ${eqUsed(e) ? 'disabled title="担当を外してから"' : ''}>外す</button>` : ''}</td></tr>`).join('')).join('')}
+      </table></div>
+      <h3>設備を足す</h3>
+      <div class="addrow">
+        <select id="eq-proc">${PROC_ORDER.map(p => `<option>${p}</option>`).join('')}<option value="__new">新しい工程…</option></select>
+        <input id="eq-newproc" placeholder="新しい工程（例 MC）" style="width:130px">
+        <input id="eq-name" placeholder="設備名（例 MC-03）" style="width:130px">
+        <input id="eq-rate" type="number" min="1" max="100" value="70" style="width:70px"><span class="spec">%</span>
+        <button class="mini dark" id="eqAdd">足す</button></div>
+      <p class="note">稼働率は、生産管理で「1日に使える時間＝就業時間×稼働率」の計算に使います。本番では日報の実績から自動で出します。</p>
+    </div>`;
+  } else {
+    const combos = Object.keys(PARTS).flatMap(p => PARTS[p].route.map(q => [p, q]));
+    const uses = (p, q) => reports.filter(r => r.part === p && r.proc === q).length;
+    const todo = combos.filter(([p, q]) => itemsFor(p, q).length === 0).sort((a, b) => uses(...b) - uses(...a));
+    const doneN = combos.length - todo.length;
+    content = `
+    <div class="card">
+      <h2>チェック項目の登録状況（紙からの移行）</h2>
+      <div class="progress"><div style="width:${combos.length ? doneN / combos.length * 100 : 0}%"></div></div>
+      <p class="note" style="margin:6px 0 12px">品番×工程 ${combos.length} 件のうち <b>${doneN} 件</b> がタブレットで入力できます（残り ${todo.length} 件は紙のまま）。<br>
+        <b>全部を一度に作らなくて大丈夫です。</b>現場で「項目がまだない」品番に当たったら、作業者が紙のシートを撮って送ります。届いたものと、よく作る品番から順に登録すれば、紙が1枚ずつ減っていきます。</p>
+      ${QUEUE.length ? `<div class="group-label">現場から届いた紙のシート（${QUEUE.length}件）</div>
+        ${QUEUE.map(q => `<div class="ngrow" style="border-color:#fde68a;background:#fffbeb">
+          <div><span class="badge b-注意">登録待ち</span>　${q.part} ${PARTS[q.part] ? PARTS[q.part].name : ''} × 工程 ${q.proc}　<span class="spec">${q.emp} さん・${q.time}${q.img || QIMG[q.id] ? '・写真あり' : ''}</span></div>
+          <button class="mini dark" data-fromqueue="${q.id}">写真から作る</button></div>`).join('')}` : ''}
+      ${todo.length ? `<div class="group-label">まだ項目がない品番×工程（日報の多い順）</div>
+        <div class="tablewrap"><table class="list" style="min-width:560px">
+          <tr><th>品番</th><th>工程</th><th>今日の日報</th><th></th></tr>
+          ${todo.map(([p, q]) => `<tr><td>${p} ${PARTS[p].name}</td><td>${q}</td><td>${uses(p, q)}件</td><td><button class="mini dark" data-editck="${p}|${q}">作る</button></td></tr>`).join('')}
+        </table></div>` : '<p class="done">すべての品番×工程にチェック項目があります。</p>'}
+    </div>`;
+  }
+  $('#app').innerHTML = `
+  <div class="card mhead-card">
+    <h2 style="margin-bottom:6px">品番・マスター</h2>
+    <p class="note" style="margin:0 0 10px">ここで直した内容は、タブレットの入力画面・QR・生産管理にすぐ反映されます。</p>
+    <div class="modes" style="margin:0">${TABS.map(([k, label]) => `<button class="${masterTab === k ? 'on' : ''}" data-mtab="${k}">${label}</button>`).join('')}</div>
+  </div>
+  ${content}
+  <div class="card noprint"><button class="mini del" id="resetAll">この端末のデータを最初の状態に戻す</button></div>`;
+  if (masterTab === 'parts' && partQuery) filterPartCards();
+}
+function filterPartCards() {
+  const q = partQuery.trim().toLowerCase();
+  document.querySelectorAll('.pcard').forEach(c => { c.style.display = !q || c.dataset.search.includes(q) ? '' : 'none'; });
+}
+
 // ---------- QR（印刷） ----------
+let qrPart = null;
 function renderQR() {
+  const qparts = Object.keys(PARTS).filter(p => !qrPart || p === qrPart);
   $('#app').innerHTML = `
   <div class="card noprint">
     <h2>品番×工程ごとのQRコード（印刷用）</h2>
-    <p class="note">現品票の工程欄に貼ります。読むと、その品番×工程の入力画面が、主担当・設備が入った状態で開きます。主担当は「決まりの修正」で変えられます（QRは刷り直さなくてよい）。<br>
+    <p class="note">現品票の工程欄に貼ります。読むと、その品番×工程の入力画面が、主担当・設備が入った状態で開きます。主担当は「品番・マスター」で変えられます（QRは刷り直さなくてよい）。<br>
     ${location.protocol === 'file:' ? '今はこのPCのファイルを指しています。Webに置くと、そのURLになります。' : 'このページのURLを指しているので、タブレットのカメラで読むとそのまま開きます。'}</p>
-    <button class="chip dark" id="print">印刷する</button>
+    <button class="chip dark" id="print">印刷する</button> ${qrPart ? `<button class="chip" id="qrAll">すべての品番を表示</button>` : ''}
   </div>
-  ${Object.keys(PARTS).map(part => `
+  ${qparts.map(part => `
     <div class="group-label">${part} ${PARTS[part].name}</div>
     <div class="qrprint">${procsOf(part).map(proc => {
       const r = mainRoute(part, proc);
@@ -1164,7 +1503,7 @@ function render() {
 }
 function setFilter(key, lvl, val) {
   const sel = key === 'input' ? f : FILTERS[key];
-  const rows = key === 'input' ? inputRows() : key === 'admin' ? reports : key === 'plan' ? orderRows() : routeRows();
+  const rows = key === 'input' ? inputRows() : key === 'admin' ? reports : routeRows();
   const before = `${f.part}|${f.proc}`;
   sel[lvl] = val === '' ? null : val;
   LEVELS.slice(LEVELS.findIndex(([k]) => k === lvl) + 1).forEach(([k]) => { sel[k] = null; });
@@ -1175,14 +1514,18 @@ function setFilter(key, lvl, val) {
     if (`${f.part}|${f.proc}` !== before) { f.values = {}; f.called = null; }
     if (f.part && f.proc && !editAssign) history.pushState(null, '', `?part=${f.part}&proc=${f.proc}`);
   }
-  if (key === 'master' && sel.part && sel.proc && masterEdit !== `${sel.part}|${sel.proc}`) openEditor(`${sel.part}|${sel.proc}`);
 }
+function goPartCard(key) {
+  view = 'master'; masterTab = 'parts'; partQuery = key.split('|')[0]; addStepFor = null; openEditor(key);
+  setTimeout(() => { const el = document.querySelector('.spanel'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30);
+}
+function commitMaster(msg) { saveMaster(); if (msg) toast(msg); }
 
 document.addEventListener('click', e => {
   const b = e.target.closest('button, tr[data-sel]');
   if (!b || b.disabled) return;
   const d = b.dataset;
-  if (d.view) { view = d.view; selected = null; }
+  if (d.view) { view = d.view; selected = null; if (d.view === 'qr') qrPart = null; }
   else if (d.f !== undefined) { const [key, lvl, ...v] = d.f.split('|'); setFilter(key, lvl, v.join('|')); }
   else if (d.scan) { const [p, q] = d.scan.split('|'); scan(p, q); toast(`QR を読みました：${p} 工程 ${q}`); }
   else if (b.id === 'rescan') clearPart();
@@ -1207,32 +1550,82 @@ document.addEventListener('click', e => {
   else if (d.att) { ATT[d.att] = ATT[d.att] === false; LS.set('kn-att', ATT); }
   else if (d.sel) selected = selected === d.sel ? null : d.sel;
   else if (d.confirm) { const r = reports.find(x => x.id === d.confirm); r.confirmed = `${$('#act-' + r.id).value}（${nowHM()}）`; saveReports(); toast('確認済みにしました'); }
-  else if (d.mv) { if (!stepOrder(d.mv, +d.dir)) return; toast('順番を入れ替えて計算し直しました'); }
+  else if (d.samplephoto) { f.photos = [...(f.photos || []), { id: 'p' + Date.now(), kind: d.samplephoto, src: samplePhoto(d.samplephoto, f.part, f.proc) }]; toast(`${d.samplephoto}の写真（見本）を付けました`); }
+  else if (d.delphoto) { f.photos = f.photos.filter(x => x.id !== d.delphoto); if (ocrOpen === d.delphoto) ocrOpen = null; }
+  else if (d.ocr) ocrOpen = ocrOpen === d.ocr ? null : d.ocr;
+  else if (d.ocrclose) ocrOpen = null;
+  else if (d.ocrapply) { const o = ocrMock(currentItems(), f.part, f.proc); Object.assign(f.values, o.fills); ocrOpen = null; toast('読み取った値を入れました。紙と見比べて確かめてください'); }
+  // ---- 生産管理 ----
+  else if (d.pview) planView = d.pview;
+  else if (d.pmv) { const [id, dir] = d.pmv.split('|'); const ids = prioIds(), i = ids.indexOf(id), j = i + +dir; if (j < 0 || j >= ids.length) return; [ids[i], ids[j]] = [ids[j], ids[i]]; renumber(ids); saveOrders(); toast('流す順番を変えて計算し直しました'); }
+  else if (d.popt) { const [i, j] = d.popt.split('|').map(Number); const op = planDecisions[i].opts[j]; op.apply(); saveOrders(); toast(`${op.label}：反映しました`); }
+  else if (b.id === 'addOrderOpen') addOrd = addOrd ? null : { part: planF.part || '', cust: '', qty: 0, due: '' };
+  else if (b.id === 'aoClose') addOrd = null;
+  else if (b.id === 'aoAdd') {
+    const D = workdaysUntil(addOrd.due);
+    const id = 'J-' + (Math.max(1000, ...ORDERS.map(o => parseInt(o.id.slice(2)) || 0)) + 1);
+    const prio = Math.max(0, ...ORDERS.filter(o => o.D <= D).map(o => o.prio)) + 0.5;
+    ORDERS.push({ id, cust: addOrd.cust || '（お客様未入力）', part: addOrd.part, qty: addOrd.qty, done: {}, D, prio });
+    renumber(ORDERS.slice().sort((a, b) => a.prio - b.prio).map(o => o.id)); saveOrders();
+    toast(`${id} を足しました（納期の順に入れています）`); addOrd = null;
+  }
+  // ---- 品番・マスター ----
+  else if (d.mtab) { masterTab = d.mtab; }
+  else if (d.pbox) { if (masterEdit === d.pbox) masterEdit = null; else openEditor(d.pbox); addStepFor = null; }
+  else if (d.closepanel) masterEdit = null;
+  else if (d.addstep !== undefined) addStepFor = d.addstep || null;
+  else if (d.addstepproc) {
+    const [part, proc] = d.addstepproc.split('|');
+    PARTS[part].route.push(proc); CHECKS[`${part}|${proc}`] = CHECKS[`${part}|${proc}`] || [];
+    addStepFor = null; commitMaster(`${part} に工程 ${proc} を足しました。担当を選んでください`); openEditor(`${part}|${proc}`);
+  }
+  else if (d.stepmv) {
+    const [part, proc, dir] = d.stepmv.split('|'); const r = PARTS[part].route, i = r.indexOf(proc), j = i + +dir;
+    [r[i], r[j]] = [r[j], r[i]]; commitMaster('工程の並びを変えました');
+  }
+  else if (d.delstep) {
+    const [part, proc] = d.delstep.split('|');
+    if (!confirm(`${part} から工程 ${proc} を外しますか？（担当の決まりも外れます）`)) return;
+    PARTS[part].route = PARTS[part].route.filter(p => p !== proc);
+    ROUTES = ROUTES.filter(r => !(r.part === part && r.proc === proc));
+    masterEdit = null; commitMaster(`工程 ${proc} を外しました`);
+  }
+  else if (d.stepaddemp) {
+    const [part, proc] = d.stepaddemp.split('|'), emp = $('#stepAddEmp').value;
+    if (!emp) { toast('担当を選んでください'); return; }
+    if (ROUTES.some(r => r.part === part && r.proc === proc && r.emp === emp)) { toast('その人はもう担当です'); return; }
+    const s = stepInfo(part, proc), first = !s.main;
+    ROUTES.push({ id: 'r' + Date.now(), part, proc, equip: s.equip, emp, main: first });
+    commitMaster(`${emp} さんを担当に足しました${first ? '（主担当）' : ''}`);
+  }
   else if (d.setmain) {
     const r = ROUTES.find(x => x.id === d.setmain);
     ROUTES.forEach(x => { if (x.part === r.part && x.proc === r.proc) x.main = x.id === r.id; });
-    saveMaster(); toast(`${r.part} × 工程 ${r.proc} の主担当を ${r.emp} さんにしました。QRを読むとこの人が入ります`);
+    commitMaster(`${r.part} × 工程 ${r.proc} の主担当を ${r.emp} さんにしました。QRを読むとこの人が入ります`);
   }
   else if (d.delroute) {
     const r = ROUTES.find(x => x.id === d.delroute);
-    if (!confirm(`${r.emp} さん・${eqLabel(r.equip)}・${r.part} ${r.proc} の決まりを外しますか？`)) return;
+    if (!confirm(`${r.emp} さん・${eqLabel(r.equip)}・${r.part} ${r.proc} の担当を外しますか？`)) return;
     ROUTES = ROUTES.filter(x => x.id !== r.id);
     if (r.main) { const n = ROUTES.find(x => x.part === r.part && x.proc === r.proc); if (n) n.main = true; }
-    saveMaster(); prune(routeRows(), FILTERS.master); toast('決まりを外しました');
+    commitMaster('担当を外しました'); prune(routeRows(), FILTERS.master);
   }
   else if (b.id === 'addRoute') {
     const emp = $('#addEmp').value, equip = $('#addEquip').value, part = $('#addPart').value, proc = EQUIP_PROC[equip];
-    if (ROUTES.some(x => x.emp === emp && x.equip === equip && x.part === part && x.proc === proc)) { toast('同じ決まりがもうあります'); return; }
+    if (ROUTES.some(x => x.emp === emp && x.part === part && x.proc === proc)) { toast('同じ担当がもうあります'); return; }
     const first = !ROUTES.some(x => x.part === part && x.proc === proc);
     ROUTES.push({ id: 'r' + Date.now(), part, proc, equip, emp, main: first });
     if (!PARTS[part].route.includes(proc)) PARTS[part].route.push(proc);
     if (!CHECKS[`${part}|${proc}`]) CHECKS[`${part}|${proc}`] = [];
-    saveMaster();
     Object.assign(FILTERS.master, { team: teamOf(emp), emp, equip, proc, part });
-    openEditor(`${part}|${proc}`);
-    toast(`${emp} さんが ${eqLabel(equip)} で ${part}（工程 ${proc}）をやる決まりを足しました${first ? '（主担当）' : ''}`);
+    commitMaster(`${emp} さんが ${eqLabel(equip)} で ${part}（工程 ${proc}）をやる担当を足しました${first ? '（主担当）' : ''}`);
   }
-  else if (d.editck) { if (masterEdit === d.editck && ckMode === 'table') masterEdit = null; else openEditor(d.editck); }
+  else if (d.editck) { goPartCard(d.editck); }
+  else if (d.fromqueue) { const q = QUEUE.find(x => x.id === d.fromqueue); goPartCard(`${q.part}|${q.proc}`); ckMode = 'ai'; aiImg = q.img || QIMG[q.id] || 'sample'; aiDraft = aiDraftFor(q.part, q.proc); }
+  else if (d.qrpart) { view = 'qr'; qrPart = d.qrpart; }
+  else if (b.id === 'qrAll') qrPart = null;
+  else if (b.id === 'onlyIssues') onlyIssues = !onlyIssues;
+  else if (b.id === 'goAddOrder') { view = 'plan'; addOrd = { part: d.part, cust: '', qty: 0, due: '' }; lastAdded = null; }
   else if (d.ckmode) {
     ckMode = d.ckmode;
     if (ckMode === 'tpl' && !tplDraft) setTpl(TPL_FOR_PROC[masterEdit.split('|')[1]] || Object.keys(TEMPLATES)[0]);
@@ -1247,33 +1640,69 @@ document.addEventListener('click', e => {
     toast(`ひな形から ${itemsFor(...masterEdit.split('|')).length - n0} 項目を作りました。タブレットにすぐ出ます`);
   }
   else if (b.id === 'copyApply') {
-    const n0 = itemsFor(...masterEdit.split('|')).length;
-    if (n0 && !confirm('今ある項目の後ろに足しますか？')) return;
-    applyItems(clone(CHECKS[copyFrom]));
-    toast('写しました。基準値など違うところだけ直してください');
+    if (itemsFor(...masterEdit.split('|')).length && !confirm('今ある項目の後ろに足しますか？')) return;
+    applyItems(clone(CHECKS[copyFrom])); toast('写しました。基準値など違うところだけ直してください');
   }
   else if (b.id === 'aiSample') { aiImg = 'sample'; aiDraft = aiDraftFor(...masterEdit.split('|')); }
-  else if (d.fromqueue) { const q = QUEUE.find(x => x.id === d.fromqueue); openEditor(`${q.part}|${q.proc}`); ckMode = 'ai'; aiImg = q.img || QIMG[q.id] || 'sample'; aiDraft = aiDraftFor(q.part, q.proc); }
   else if (b.id === 'aiApply') { const n = aiDraft.filter(it => it.use).length; applyItems(aiDraft); toast(`${n} 項目を登録しました。次からこの品番×工程はタブレットで入力できます（紙はいりません）`); }
-  else if (d.samplephoto) { f.photos = [...(f.photos || []), { id: 'p' + Date.now(), kind: d.samplephoto, src: samplePhoto(d.samplephoto, f.part, f.proc) }]; toast(`${d.samplephoto}の写真（見本）を付けました`); }
-  else if (d.delphoto) { f.photos = f.photos.filter(x => x.id !== d.delphoto); if (ocrOpen === d.delphoto) ocrOpen = null; }
-  else if (d.ocr) ocrOpen = ocrOpen === d.ocr ? null : d.ocr;
-  else if (d.ocrclose) ocrOpen = null;
-  else if (d.ocrapply) { const o = ocrMock(currentItems(), f.part, f.proc); Object.assign(f.values, o.fills); ocrOpen = null; toast('読み取った値を入れました。紙と見比べて確かめてください'); }
-  else if (d.sendpaper) { QUEUE.push({ id: 'q' + Date.now(), part: f.part, proc: f.proc, emp: f.emp || '（担当なし）', time: nowHM() }); saveQueue(); toast('管理者に送りました。今日は紙のシートに書いてください'); }
-  else if (b.id === 'closeCk') masterEdit = null;
   else if (b.id === 'addItem') {
     const list = CHECKS[masterEdit] = CHECKS[masterEdit] || [];
-    list.push(N(Math.max(0, ...list.map(x => x.n)) + 1, '新しい項目', '', 0, -0.1, 0.1, 0.01, 'ノギス'));
-    saveMaster();
+    list.push(N(Math.max(0, ...list.map(x => x.n)) + 1, '新しい項目', '', 0, -0.1, 0.1, 0.01, 'ノギス')); saveMaster();
   }
   else if (d.delitem !== undefined) { CHECKS[masterEdit].splice(+d.delitem, 1); saveMaster(); }
+  // 品番を足す（3ステップ）
+  else if (b.id === 'wizOpen') { wiz = { step: 1, code: '', name: '', drawing: '', steps: [] }; lastAdded = null; masterEdit = null; }
+  else if (b.id === 'wzCancel') wiz = null;
+  else if (b.id === 'wzBack') wiz.step--;
+  else if (b.id === 'wzNext') {
+    wiz.step++;
+    if (wiz.step === 3) wiz.steps.forEach(s => { if (!s.items) { const k = Object.keys(CHECKS).find(k => k.split('|')[1] === s.proc && CHECKS[k].length && PARTS[k.split('|')[0]]); s.items = k ? `copy:${k}` : 'later'; } });
+  }
+  else if (d.wzproc) {
+    const equip = (PROCESSES[d.wzproc] || [])[0];
+    const users = ROUTES.filter(r => r.equip === equip).map(r => r.emp);
+    const sameCt = Object.entries(CT).find(([k]) => k.split('|')[1] === d.wzproc);
+    wiz.steps.push({ proc: d.wzproc, equip, emp: users[0] || '', ct: sameCt ? sameCt[1] : 5, items: '' });
+  }
+  else if (d.wzdel !== undefined) wiz.steps.splice(+d.wzdel, 1);
+  else if (b.id === 'wzDone') {
+    const code = wiz.code.trim();
+    PARTS[code] = { name: wiz.name.trim(), drawing: wiz.drawing || null, route: wiz.steps.map(s => s.proc) };
+    wiz.steps.forEach((s, i) => {
+      ROUTES.push({ id: 'r' + Date.now() + i, part: code, proc: s.proc, equip: s.equip, emp: s.emp, main: true });
+      CT[`${code}|${s.proc}`] = +s.ct || 5;
+      CHECKS[`${code}|${s.proc}`] = s.items && s.items.startsWith('copy:') ? clone(CHECKS[s.items.slice(5)]) : [];
+    });
+    commitMaster(`品番 ${code} を登録しました。タブレット・QR・生産管理にすぐ出ます`);
+    lastAdded = code; partQuery = code; onlyIssues = false;
+    const later = wiz.steps.find(s => !(s.items || '').startsWith('copy:'));
+    wiz = null; masterEdit = null;
+    if (later) openEditor(`${code}|${later.proc}`);
+  }
+  // 人・設備
+  else if (b.id === 'ppAdd') {
+    const name = $('#pp-name').value.trim(), team = $('#pp-team').value === '__new' ? $('#pp-newteam').value.trim() : $('#pp-team').value;
+    if (!name || !team) { toast('名前と係を入れてください'); return; }
+    if (EMPLOYEES.some(e => e.name === name)) { toast('同じ名前の人がもういます'); return; }
+    EMPLOYEES.push({ name, team }); commitMaster(`${team} に ${name} さんを足しました`);
+  }
+  else if (d.delemp) { EMPLOYEES = EMPLOYEES.filter(e => e.name !== d.delemp); commitMaster('外しました'); }
+  else if (b.id === 'eqAdd') {
+    const proc = $('#eq-proc').value === '__new' ? $('#eq-newproc').value.trim() : $('#eq-proc').value, name = $('#eq-name').value.trim();
+    if (!proc || !name) { toast('工程と設備名を入れてください'); return; }
+    if (EQUIPS.includes(name)) { toast('同じ名前の設備がもうあります'); return; }
+    PROCESSES[proc] = [...(PROCESSES[proc] || []), name]; RATES[name] = Math.min(100, Math.max(1, +$('#eq-rate').value || 70)) / 100;
+    commitMaster(`工程 ${proc} に ${name} を足しました`);
+  }
+  else if (d.deleq) { const p = EQUIP_PROC[d.deleq]; PROCESSES[p] = PROCESSES[p].filter(e => e !== d.deleq); commitMaster('外しました'); }
   else if (b.id === 'resetAll') {
-    if (!confirm('この端末の決まり・チェック項目・日報・出勤を最初の状態に戻しますか？')) return;
-    ['kn-routes', 'kn-checks', 'kn-reports', 'kn-att', 'kn-draft', 'kn-queue'].forEach(LS.del);
-    ROUTES = clone(DEFAULT_ROUTES); CHECKS = clone(DEFAULT_CHECKS); reports = SEED(); ATT = {}; masterEdit = null;
+    if (!confirm('この端末の品番・マスター・チェック項目・日報・受注・出勤を最初の状態に戻しますか？')) return;
+    ['kn-routes', 'kn-checks', 'kn-reports', 'kn-att', 'kn-draft', 'kn-queue', 'kn-parts', 'kn-emps', 'kn-procs', 'kn-rates', 'kn-ct', 'kn-orders'].forEach(LS.del);
+    EMPLOYEES = clone(DEFAULT_EMPLOYEES); PROCESSES = clone(DEFAULT_PROCESSES); RATES = clone(DEFAULT_RATES); PARTS = clone(DEFAULT_PARTS); CT = clone(DEFAULT_CT);
+    rebuild();
+    ROUTES = clone(DEFAULT_ROUTES); CHECKS = clone(DEFAULT_CHECKS); reports = SEED(); ATT = {}; ORDERS = clone(DEFAULT_ORDERS);
     QUEUE = [{ id: 'q1', part: '7C22031150', proc: 'K', emp: '中村 光', time: '09:40' }];
-    FILTERS.master = {}; toast('最初の状態に戻しました');
+    masterEdit = null; wiz = null; lastAdded = null; FILTERS.master = {}; planF = { team: '', emp: '', part: '' }; planHours = 8; toast('最初の状態に戻しました');
   }
   else return;
   render();
@@ -1291,12 +1720,40 @@ document.addEventListener('input', e => {
     LS.set('kn-draft', f);
   } else if (t.id === 'qty' || t.id === 'ngQty') { f[t.id] = parseInt(t.value) || 0; LS.set('kn-draft', f); }
   else if (t.id === 'memo') { f.memo = t.value; LS.set('kn-draft', f); }
+  else if (t.id === 'partSearch') { partQuery = t.value; filterPartCards(); }
+  else if (t.id === 'wz-code' || t.id === 'wz-name') {
+    wiz[t.id === 'wz-code' ? 'code' : 'name'] = t.value;
+    const btn = $('#wzNext'); if (btn) btn.disabled = !(wiz.code.trim() && !PARTS[wiz.code.trim()] && wiz.name.trim());
+  }
 });
 
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'hours') { planHours = +t.value; render(); }
-  else if (t.dataset.move) { if (moveOrder(t.dataset.move, undefined, t.value)) toast('設備を変えて計算し直しました'); render(); }
+  else if (t.id === 'pf-team') { planF = { team: t.value, emp: '', part: '' }; render(); }
+  else if (t.id === 'pf-emp') { planF.emp = t.value; planF.part = ''; render(); }
+  else if (t.id === 'pf-part') { planF.part = t.value; render(); }
+  else if (t.id && t.id.startsWith('ao-')) {
+    const k = t.id.slice(3);
+    addOrd[k] = k === 'qty' ? (parseInt(t.value) || 0) : t.value;
+    render();
+  }
+  else if (t.id === 'wz-draw') wiz.drawing = t.value;
+  else if (t.id === 'wz-code' || t.id === 'wz-name') render();
+  else if (t.dataset.wzf) {
+    const [i, k] = t.dataset.wzf.split('|'), s = wiz.steps[+i];
+    s[k] = k === 'ct' ? (parseFloat(t.value) || 0) : t.value;
+    if (k === 'equip') { const users = ROUTES.filter(r => r.equip === s.equip).map(r => r.emp); if (!users.includes(s.emp)) s.emp = users[0] || s.emp; }
+    render();
+  }
+  else if (t.dataset.stepeq) {
+    const [part, proc] = t.dataset.stepeq.split('|');
+    ROUTES.forEach(r => { if (r.part === part && r.proc === proc) r.equip = t.value; });
+    commitMaster(`工程 ${proc} の設備を ${eqLabel(t.value)} にしました`); render();
+  }
+  else if (t.dataset.ct) { CT[t.dataset.ct] = parseFloat(t.value) || 0; commitMaster('サイクルタイムを保存しました。生産管理の計算に使われます'); }
+  else if (t.dataset.rate) { RATES[t.dataset.rate] = Math.min(100, Math.max(1, +t.value || 70)) / 100; commitMaster('稼働率を保存しました'); }
+  else if (t.id === 'pp-team' || t.id === 'eq-proc') { /* 新しい係・工程の入力欄はいつも出している */ }
   else if (t.dataset.td) {
     const [i, field] = t.dataset.td.split('|');
     tplDraft[+i][field] = field === 'use' ? t.checked : t.value;
@@ -1310,12 +1767,6 @@ document.addEventListener('change', e => {
       f.photos = [...(f.photos || []), ...srcs.map((src, i) => ({ id: 'p' + Date.now() + i, kind, src }))];
       toast(`${kind}の写真を${srcs.length}枚付けました`); render();
     });
-  }
-  else if (t.id === 'paperFile' && t.files[0]) {
-    const id = 'q' + Date.now();
-    QIMG[id] = URL.createObjectURL(t.files[0]);
-    QUEUE.push({ id, part: f.part, proc: f.proc, emp: f.emp || '（担当なし）', time: nowHM() }); saveQueue();
-    toast('写真を管理者に送りました。今日は紙のシートに書いてください'); render();
   }
   else if (t.dataset.ad) {
     const [i, field] = t.dataset.ad.split('|'), it = aiDraft[+i];
@@ -1336,25 +1787,32 @@ document.addEventListener('change', e => {
   }
 });
 
+// 設備ごとの帯：ドラッグで順番・設備を変える
 const clearOver = () => document.querySelectorAll('.over').forEach(x => x.classList.remove('over'));
 document.addEventListener('dragstart', e => {
-  const l = e.target.closest && e.target.closest('[data-lane]');
-  if (!l) return;
-  dragId = l.dataset.lane; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); l.classList.add('dragging');
+  const s = e.target.closest && e.target.closest('[data-seg]');
+  if (!s) return;
+  dragId = s.dataset.seg; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); s.classList.add('dragging');
 });
 document.addEventListener('dragover', e => {
-  const t = e.target.closest && e.target.closest('[data-lane],[data-eqrow]');
+  const t = e.target.closest && e.target.closest('[data-seg],[data-eqrow]');
   if (!t || !dragId) return;
   e.preventDefault(); clearOver(); t.classList.add('over');
 });
 document.addEventListener('drop', e => {
-  const t = e.target.closest && e.target.closest('[data-lane],[data-eqrow]');
+  const t = e.target.closest && e.target.closest('[data-seg],[data-eqrow]');
   clearOver();
   if (!t || !dragId) return;
   e.preventDefault();
-  const target = t.dataset.lane || undefined;
-  if (target !== dragId && moveOrder(dragId, target, t.dataset.eq)) { render(); toast('順番を入れ替えて計算し直しました'); }
+  const [id, proc] = dragId.split('|'), eq = t.dataset.eq, o = ORDERS.find(x => x.id === id);
   dragId = null;
+  if (EQUIP_PROC[eq] !== proc) { toast(`${eqLabel(eq)} は工程 ${EQUIP_PROC[eq]} の設備なので、工程 ${proc} は移せません`); return; }
+  let msg = '';
+  if (stepEq(o, proc) !== eq) { o.eq = { ...(o.eq || {}), [proc]: eq }; msg = `${id} の工程 ${proc} を ${eqLabel(eq)} に移しました`; }
+  const target = t.dataset.seg ? t.dataset.seg.split('|')[0] : null;
+  if (target && target !== id) { movePrio(id, target); msg = msg || `${id} を ${target} の${prioIds().indexOf(id) < prioIds().indexOf(target) ? '前' : '後'}に流すようにしました`; }
+  if (!msg) return;
+  saveOrders(); render(); toast(msg);
 });
 document.addEventListener('dragend', () => { clearOver(); dragId = null; document.querySelectorAll('.dragging').forEach(x => x.classList.remove('dragging')); });
 
