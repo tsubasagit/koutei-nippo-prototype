@@ -1406,7 +1406,7 @@ function renderMaster() {
       <h2>係と人</h2>
       <div class="tablewrap"><table class="list" style="min-width:560px">
         <tr><th>係</th><th>人</th><th>担当している工程</th><th></th></tr>
-        ${EMPLOYEES.map(e => `<tr><td>${e.team}</td><td>${e.name}</td><td>${used(e.name)}件</td>
+        ${EMPLOYEES.map(e => `<tr><td><select class="fsel" data-empteam="${esc(e.name)}" title="係を変える（異動）">${TEAMS.map(t => `<option ${t === e.team ? 'selected' : ''}>${t}</option>`).join('')}<option value="__new">新しい係…</option></select></td><td>${e.name}</td><td>${used(e.name)}件</td>
           <td><button class="mini del" data-delemp="${esc(e.name)}" ${used(e.name) ? 'disabled title="担当を外してから"' : ''}>外す</button></td></tr>`).join('')}
       </table></div>
       <h3>人を足す</h3>
@@ -1414,7 +1414,8 @@ function renderMaster() {
         <select id="pp-team">${TEAMS.map(t => `<option>${t}</option>`).join('')}<option value="__new">新しい係…</option></select>
         <input id="pp-newteam" placeholder="新しい係の名前" style="width:120px">
         <button class="mini dark" id="ppAdd">足す</button></div>
-      <p class="note">担当している工程がある人は外せません。先に品番カードで担当を外してください。</p>
+      <p class="note">係の欄を変えると、その人の係が変わります（異動）。担当している工程はそのまま引き継ぎ、過去の日報の係は当時のまま残ります。<br>
+        担当している工程がある人は外せません。先に品番カードで担当を外してください。</p>
     </div>
     <div class="card">
       <h2>工程と設備</h2>
@@ -1752,6 +1753,17 @@ document.addEventListener('change', e => {
     commitMaster(`工程 ${proc} の設備を ${eqLabel(t.value)} にしました`); render();
   }
   else if (t.dataset.ct) { CT[t.dataset.ct] = parseFloat(t.value) || 0; commitMaster('サイクルタイムを保存しました。生産管理の計算に使われます'); }
+  else if (t.dataset.empteam) {
+    const e = EMPLOYEES.find(x => x.name === t.dataset.empteam), from = e.team;
+    let to = t.value;
+    if (to === '__new') { to = (prompt('新しい係の名前を入れてください（例 6係）') || '').trim(); if (!to) { render(); return; } }
+    if (to === from) return;
+    const n = ROUTES.filter(r => r.emp === e.name).length;
+    e.team = to; commitMaster(`${e.name} さんを ${from} から ${to} に移しました${n ? `（担当 ${n}件はそのまま）` : ''}`);
+    Object.keys(FILTERS).forEach(k => { if (FILTERS[k].emp === e.name) FILTERS[k].team = to; });
+    if (planF.emp === e.name) planF.team = to;
+    render();
+  }
   else if (t.dataset.rate) { RATES[t.dataset.rate] = Math.min(100, Math.max(1, +t.value || 70)) / 100; commitMaster('稼働率を保存しました'); }
   else if (t.id === 'pp-team' || t.id === 'eq-proc') { /* 新しい係・工程の入力欄はいつも出している */ }
   else if (t.dataset.td) {
