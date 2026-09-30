@@ -1761,7 +1761,10 @@ document.addEventListener('change', e => {
     const n = ROUTES.filter(r => r.emp === e.name).length;
     e.team = to; commitMaster(`${e.name} さんを ${from} から ${to} に移しました${n ? `（担当 ${n}件はそのまま）` : ''}`);
     Object.keys(FILTERS).forEach(k => { if (FILTERS[k].emp === e.name) FILTERS[k].team = to; });
+    prune(routeRows(), FILTERS.master);
     if (planF.emp === e.name) planF.team = to;
+    if (planF.team && !TEAMS.includes(planF.team)) planF = { team: '', emp: '', part: '' };
+    if (f.emp === e.name) f.team = to;
     render();
   }
   else if (t.dataset.rate) { RATES[t.dataset.rate] = Math.min(100, Math.max(1, +t.value || 70)) / 100; commitMaster('稼働率を保存しました'); }
