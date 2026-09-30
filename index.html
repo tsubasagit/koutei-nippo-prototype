@@ -218,6 +218,10 @@
   ul.ready li span { display: inline-block; width: 20px; font-weight: 700; } ul.ready li.ok { color: var(--ok); } ul.ready li small { display: block; margin-left: 20px; font-size: 12px; color: var(--sub); }
   .big-in { font-size: 18px; width: 100%; max-width: 360px; }
   .wzchip { background: var(--accent-bg); color: #1e3a8a; border-radius: 8px; padding: 6px 10px; font-weight: 500; }
+  .xfer { border: 2px solid #f59e0b; background: #fffbeb; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  .mini-sel { padding: 3px 6px; font-size: 12px; }
+  .ppill { display: inline-flex; flex-direction: column; align-items: flex-start; border-width: 2px; border-style: solid; border-radius: 8px; padding: 3px 8px; font: inherit; font-size: 13px; font-weight: 600; background: #fff; cursor: pointer; line-height: 1.3; }
+  .ppill small { font-weight: 400; font-size: 11px; color: var(--sub); }
   .progress { height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; } .progress div { height: 10px; background: var(--ok); }
   .modes { display: flex; flex-wrap: wrap; gap: 4px; background: #f3f4f6; border-radius: 10px; padding: 4px; margin-bottom: 12px; }
   .modes button { border: 0; background: transparent; padding: 10px 14px; border-radius: 8px; font: inherit; font-size: 14px; cursor: pointer; color: var(--sub); }
@@ -1137,6 +1141,90 @@ function setTpl(name) {
 }
 
 let masterTab = 'parts', partQuery = '', onlyIssues = false, addStepFor = null, wiz = null, lastAdded = null;
+let xfer = null;
+let partView = 'card';
+function partTableHtml(parts) {
+  return `<div class="card"><div class="tablewrap"><table class="list" style="min-width:820px">
+    <tr><th>品番</th><th>名前</th><th>工程の流れ（押すとその工程を開く）</th><th>受注</th><th>状態</th></tr>
+    ${parts.map(p => { const { steps, ok, issues } = partStatus(p); const orders = ORDERS.filter(o => o.part === p).length;
+      return `<tr class="ptrow" data-search="${esc(`${p} ${PARTS[p].name} ${[...new Set(ROUTES.filter(r => r.part === p).map(r => r.emp))].join(' ')}`.toLowerCase())}">
+        <td><b>${p}</b></td><td>${PARTS[p].name}</td>
+        <td><div class="flow" style="gap:4px">${steps.map((s, i) => `${i ? '<span class="arrow" style="font-size:14px">→</span>' : ''}<button class="ppill st-${s.st}" data-openstep="${p}|${s.proc}" title="${ST_TXT[s.st]}">${s.proc}<small>${s.main ? s.main.emp.split(' ')[0] : '担当なし'}</small></button>`).join('') || '<span class="note">工程なし</span>'}</div></td>
+        <td>${orders ? `<button class="linkbtn" data-planpart="${p}">${orders}件</button>` : '−'}</td>
+        <td><span class="badge ${ok ? 'b-OK' : 'b-注意'}">${ok ? '入力できます' : `あと${issues}か所`}</span></td></tr>`; }).join('') || '<tr><td colspan="5" class="note">当てはまる品番はありません。</td></tr>'}
+  </table></div></div>`;
+}
+let XFER_LOG = LS.get('kn-xferlog', null) || [];
+const saveXferLog = () => LS.set('kn-xferlog', XFER_LOG);
+// 異動の準備：担当ごとに「引き継ぐ／そのまま／外す」を決める
+function startXfer(name, to) {
+  const from = teamOf(name);
+  const routes = ROUTES.filter(r => r.emp === name).map(r => {
+    const others = ROUTES.filter(x => x.equip === r.equip && x.emp !== name).map(x => x.emp);
+    const sameTeam = EMPLOYEES.filter(e => e.team === from && e.name !== name).map(e => e.name);
+    const cand = others.find(n => sameTeam.includes(n)) || sameTeam[0] || others[0] || '';
+    return { id: r.id, part: r.part, proc: r.proc, equip: r.equip, main: r.main, action: r.main && cand ? 'handover' : 'keep', target: cand };
+  });
+  xfer = { name, from, to, routes };
+}
+function xferSummary(x) {
+  const c = a => x.routes.filter(r => r.action === a).length;
+  return [c('handover') && `引き継ぎ ${c('handover')}件`, c('keep') && `そのまま ${c('keep')}件`, c('remove') && `外す ${c('remove')}件`].filter(Boolean).join('・') || '担当なし';
+}
+function applyXfer() {
+  const x = xfer, e = EMPLOYEES.find(y => y.name === x.name), notes = [];
+  x.routes.forEach(rt => {
+    const r = ROUTES.find(y => y.id === rt.id);
+    if (!r) return;
+    const label = `${rt.part} ${PARTS[rt.part] ? PARTS[rt.part].name : ''} ${rt.proc}${rt.main ? '（主）' : ''}`;
+    if (rt.action === 'remove') {
+      ROUTES = ROUTES.filter(y => y.id !== r.id);
+      if (r.main) { const n = ROUTES.find(y => y.part === r.part && y.proc === r.proc); if (n) n.main = true; }
+      notes.push(`${label} を外す`);
+    } else if (rt.action === 'handover') {
+      const ex = ROUTES.find(y => y.part === r.part && y.proc === r.proc && y.emp === rt.target);
+      if (ex) { if (r.main) { ROUTES.forEach(y => { if (y.part === r.part && y.proc === r.proc) y.main = false; }); ex.main = true; } ROUTES = ROUTES.filter(y => y.id !== r.id); }
+      else r.emp = rt.target;
+      notes.push(`${label} を ${rt.target} さんに引き継ぎ`);
+    } else notes.push(`${label} はそのまま`);
+  });
+  e.team = x.to;
+  const d = new Date();
+  XFER_LOG.unshift({ date: `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`, time: nowHM(), name: x.name, from: x.from, to: x.to, notes });
+  saveXferLog();
+  commitMaster(`${x.name} さんを ${x.from} から ${x.to} に移しました（${xferSummary(x)}）`);
+  Object.keys(FILTERS).forEach(k => { if (FILTERS[k].emp === x.name) FILTERS[k].team = x.to; });
+  prune(routeRows(), FILTERS.master);
+  if (planF.emp === x.name) planF.team = x.to;
+  if (planF.team && !TEAMS.includes(planF.team)) planF = { team: '', emp: '', part: '' };
+  if (f.emp === x.name) f.team = x.to;
+  xfer = null;
+}
+function xferHtml() {
+  const x = xfer;
+  const bad = x.routes.filter(r => r.action === 'handover' && !r.target).length;
+  return `<div class="xfer">
+    <div class="spanel-head"><b>異動の確認：${x.name} さん　${x.from} → ${x.to}</b></div>
+    ${x.routes.length ? `<p class="note" style="margin-top:0">${x.name} さんは、いま <b>${x.routes.length}件</b> の担当を持っています（主担当 ${x.routes.filter(r => r.main).length}件）。それぞれどうするか決めてください。<br>
+      主担当のままにすると、その品番×工程の QR を読んだときに ${x.name} さんが入ります。</p>
+    <div class="tablewrap"><table class="list" style="min-width:720px">
+      <tr><th>品番</th><th>工程・設備</th><th>役割</th><th>どうするか</th><th>引き継ぐ人</th></tr>
+      ${x.routes.map((r, i) => `<tr>
+        <td>${r.part}<div class="spec">${PARTS[r.part] ? PARTS[r.part].name : ''}</div></td><td>${r.proc}・${eqLabel(r.equip)}</td>
+        <td>${r.main ? '<span class="badge b-OK">主担当</span>' : '<span class="badge b-副">副担当</span>'}</td>
+        <td><select class="fsel" data-xa="${i}">${[['handover', '別の人に引き継ぐ'], ['keep', 'そのまま担当する'], ['remove', '担当から外す']].map(([v, l]) => `<option value="${v}" ${r.action === v ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
+        <td>${r.action === 'handover' ? `<select class="fsel" data-xt="${i}" style="${r.target ? '' : 'background:#fef3c7'}">${empOptions(r.equip, r.target).replace(`<option value="${esc(x.name)}"`, `<option disabled value="${esc(x.name)}"`)}</select>`
+          : r.action === 'remove' && !ROUTES.some(y => y.part === r.part && y.proc === r.proc && y.emp !== x.name) ? '<span class="badge b-NG">外すと担当が誰もいなくなります</span>'
+          : r.action === 'keep' && r.main ? `<span class="spec">QRで ${x.name} さんが入ります</span>` : '<span class="spec">−</span>'}</td>
+      </tr>`).join('')}
+    </table></div>` : `<p class="note" style="margin-top:0">${x.name} さんは担当を持っていないので、係を変えるだけです。</p>`}
+    <div class="addrow" style="margin-top:10px">
+      <button class="mini" id="xferCancel">やめる</button>
+      <button class="mini dark" id="xferOk" ${bad ? 'disabled' : ''}>この内容で異動する</button>
+      <span class="note">${bad ? '引き継ぐ人が選ばれていない行があります' : xferSummary(x)}</span>
+    </div>
+  </div>`;
+}
 
 function stepInfo(part, proc) {
   const routes = ROUTES.filter(r => r.part === part && r.proc === proc);
@@ -1248,14 +1336,18 @@ function stepPanelHtml(part, proc) {
     <div class="spanel-head"><b>工程 ${idx + 1}：${proc}</b> <span class="badge ${s.st === 'green' ? 'b-OK' : s.st === 'amber' ? 'b-注意' : 'b-NG'}">${ST_TXT[s.st]}</span>
       <span style="flex:1"></span><button class="mini" data-closepanel="1">閉じる</button></div>
     <div class="row3">
-      <div><div class="group-label">設備</div><select class="fsel" data-stepeq="${key}">${(PROCESSES[proc] || []).map(e => `<option value="${e}" ${e === s.equip ? 'selected' : ''}>${eqLabel(e)}</option>`).join('')}</select></div>
+      <div><div class="group-label">使う設備</div><b>${[...new Set(s.routes.map(r => r.equip))].map(eqLabel).join('・') || eqLabel(s.equip)}</b>
+        <div class="spec">設備は担当ごとに下で選びます。生産管理は★主担当の設備で計算します</div></div>
       <div><div class="group-label">サイクルタイム（1個あたり・分）</div><input class="fsel" type="number" step="any" min="0" data-ct="${key}" value="${CT[key] ?? ''}" placeholder="例 6" style="width:120px"><span class="spec"> 生産管理の計算に使います</span></div>
       <div><div class="group-label">工程の並び</div><div class="addrow"><button class="mini" data-stepmv="${key}|-1" ${idx === 0 ? 'disabled' : ''}>← 前へ</button><button class="mini" data-stepmv="${key}|1" ${idx === PARTS[part].route.length - 1 ? 'disabled' : ''}>後ろへ →</button><button class="mini del" data-delstep="${key}">この工程を外す</button></div></div>
     </div>
-    <div class="group-label">担当（★の人が、QRを読んだときに入る主担当）</div>
+    <div class="group-label">担当と設備（★の人が、QRを読んだときに入る主担当）</div>
     <div class="chips">${s.routes.map(r => `<span class="person ${r.main ? 'main' : ''}">${r.main ? '★ ' : ''}${r.emp}<small>${teamOf(r.emp)}</small>
+      ${(PROCESSES[proc] || []).length > 1 ? `<select class="fsel mini-sel" data-routeeq="${r.id}" title="この人が使う設備">${PROCESSES[proc].map(e => `<option value="${e}" ${e === r.equip ? 'selected' : ''}>${eqLabel(e)}</option>`).join('')}</select>` : `<small>${eqLabel(r.equip)}</small>`}
       ${r.main ? '' : `<button class="mini" data-setmain="${r.id}">主担当にする</button>`}<button class="mini del" data-delroute="${r.id}">外す</button></span>`).join('') || '<span class="note">まだ担当がいません。下で足してください。</span>'}</div>
-    <div class="addrow" style="margin-top:8px"><select class="fsel" id="stepAddEmp">${empOptions(s.equip)}</select><button class="mini dark" data-stepaddemp="${key}">担当を足す</button></div>
+    <div class="addrow" style="margin-top:8px"><select class="fsel" id="stepAddEmp">${empOptions(s.equip)}</select>
+      ${(PROCESSES[proc] || []).length > 1 ? `<span class="spec">が</span><select class="fsel" id="stepAddEq">${PROCESSES[proc].map(e => `<option value="${e}" ${e === s.equip ? 'selected' : ''}>${eqLabel(e)}</option>`).join('')}</select><span class="spec">で</span>` : ''}
+      <button class="mini dark" data-stepaddemp="${key}">担当を足す</button></div>
     <h3>チェック項目（${s.n}項目）</h3>
     ${ckEditorHtml()}
   </div>`;
@@ -1269,12 +1361,12 @@ function partCardHtml(part) {
     <div class="pc-head">
       <div><span class="big2">${part}</span> <span style="font-size:17px">${PARTS[part].name}</span>
         <span class="badge ${ok ? 'b-OK' : 'b-注意'}">${ok ? '入力できます' : `あと${issues}か所`}</span>
-        ${orders ? `<span class="spec">　受注 ${orders}件</span>` : ''}</div>
+        ${orders ? `<button class="linkbtn" data-planpart="${part}">受注 ${orders}件を生産管理で見る</button>` : ''}</div>
       <div class="addrow"><button class="mini" data-addstep="${part}">＋ 工程を足す</button><button class="mini" data-qrpart="${part}">QRを印刷</button></div>
     </div>
     <div class="flow">${steps.map((s, i) => `${i ? '<span class="arrow">→</span>' : ''}
       <button class="pbox st-${s.st} ${masterEdit === `${part}|${s.proc}` ? 'sel' : ''}" data-pbox="${part}|${s.proc}">
-        <span class="pnum">${i + 1}</span><b>${s.proc}</b><span class="spec">${eqLabel(s.equip)}</span>
+        <span class="pnum">${i + 1}</span><b>${s.proc}</b><span class="spec">${[...new Set(s.routes.map(r => r.equip))].map(eqLabel).join('・') || eqLabel(s.equip)}</span>
         <span class="ppl">${s.routes.map(r => `${r.main ? '★' : ''}${r.emp.split(' ')[0]}`).join('・') || '担当なし'}</span>
         <span class="pmeta">${s.n ? `項目 ${s.n}` : '項目なし'}・${CT[`${part}|${s.proc}`] ?? '−'}分/個</span>
         <span class="pst">${ST_TXT[s.st]}</span>
@@ -1356,14 +1448,15 @@ function renderMaster() {
     ${wiz ? wizardHtml() : ''}
     <div class="card">
       <div class="toolbar">
-        <input id="partSearch" class="fsel" placeholder="品番・名前・担当で探す" value="${esc(partQuery)}" style="min-width:240px">
+        <input id="partSearch" class="fsel" placeholder="品番・名前・担当で探す" value="${esc(partQuery)}" style="min-width:240px">${partQuery ? '<button class="mini" id="clearSearch" title="検索を消す">× 検索を消す</button>' : ''}
         <button class="chip sm ${onlyIssues ? 'on' : ''}" id="onlyIssues">まだ入力できない品番だけ（${allIssues}）</button>
+        <span class="modes" style="margin:0;padding:3px"><button class="${partView === 'card' ? 'on' : ''}" data-partview="card">カード</button><button class="${partView === 'table' ? 'on' : ''}" data-partview="table">一覧表</button></span>
         <span style="flex:1"></span>
         ${wiz ? '' : '<button class="chip dark" id="wizOpen">＋ 品番を足す</button>'}
       </div>
       <div class="legend2"><span class="pbox-mini st-green"></span>入力できる <span class="pbox-mini st-amber"></span>チェック項目なし <span class="pbox-mini st-red"></span>主担当なし　<span class="spec">工程の箱を押すと、その場で設備・担当・チェック項目を直せます</span></div>
     </div>
-    ${parts.map(partCardHtml).join('') || '<div class="card note">当てはまる品番はありません。</div>'}`;
+    ${partView === 'table' ? partTableHtml(parts) : parts.map(partCardHtml).join('') || '<div class="card note">当てはまる品番はありません。</div>'}`;
   } else if (masterTab === 'assign') {
     const sel = FILTERS.master, rows = routeRows();
     const { opts, rows: hit } = cascade(rows, sel);
@@ -1404,6 +1497,7 @@ function renderMaster() {
     content = `
     <div class="card">
       <h2>係と人</h2>
+      ${xfer ? xferHtml() : ''}
       <div class="tablewrap"><table class="list" style="min-width:560px">
         <tr><th>係</th><th>人</th><th>担当している工程</th><th></th></tr>
         ${EMPLOYEES.map(e => `<tr><td><select class="fsel" data-empteam="${esc(e.name)}" title="係を変える（異動）">${TEAMS.map(t => `<option ${t === e.team ? 'selected' : ''}>${t}</option>`).join('')}<option value="__new">新しい係…</option></select></td><td>${e.name}</td><td>${used(e.name)}件</td>
@@ -1414,8 +1508,16 @@ function renderMaster() {
         <select id="pp-team">${TEAMS.map(t => `<option>${t}</option>`).join('')}<option value="__new">新しい係…</option></select>
         <input id="pp-newteam" placeholder="新しい係の名前" style="width:120px">
         <button class="mini dark" id="ppAdd">足す</button></div>
-      <p class="note">係の欄を変えると、その人の係が変わります（異動）。担当している工程はそのまま引き継ぎ、過去の日報の係は当時のまま残ります。<br>
+      <p class="note">係の欄を変えると、異動の確認が出ます。担当ごとに「別の人に引き継ぐ・そのまま・外す」を選んでから確定します。過去の日報の係は当時のまま残ります。<br>
         担当している工程がある人は外せません。先に品番カードで担当を外してください。</p>
+    </div>
+    <div class="card">
+      <h2>異動の記録</h2>
+      ${XFER_LOG.length ? `<div class="tablewrap"><table class="list" style="min-width:640px">
+        <tr><th>日付</th><th>人</th><th>係</th><th>担当の扱い</th></tr>
+        ${XFER_LOG.map(l => `<tr><td>${l.date} ${l.time}</td><td>${esc(l.name)}</td><td>${esc(l.from)} → ${esc(l.to)}</td><td class="spec">${l.notes.map(esc).join('<br>') || '担当なし'}</td></tr>`).join('')}
+      </table></div>` : '<p class="note" style="margin:0">まだ異動はありません。</p>'}
+      <p class="note" style="margin-bottom:0">過去の日報の係は、その日の係のまま残ります。この記録と合わせて、いつから係が変わったかを説明できます。</p>
     </div>
     <div class="card">
       <h2>工程と設備</h2>
@@ -1470,7 +1572,7 @@ function renderMaster() {
 }
 function filterPartCards() {
   const q = partQuery.trim().toLowerCase();
-  document.querySelectorAll('.pcard').forEach(c => { c.style.display = !q || c.dataset.search.includes(q) ? '' : 'none'; });
+  document.querySelectorAll('.pcard, .ptrow').forEach(c => { c.style.display = !q || c.dataset.search.includes(q) ? '' : 'none'; });
 }
 
 // ---------- QR（印刷） ----------
@@ -1596,7 +1698,7 @@ document.addEventListener('click', e => {
     if (!emp) { toast('担当を選んでください'); return; }
     if (ROUTES.some(r => r.part === part && r.proc === proc && r.emp === emp)) { toast('その人はもう担当です'); return; }
     const s = stepInfo(part, proc), first = !s.main;
-    ROUTES.push({ id: 'r' + Date.now(), part, proc, equip: s.equip, emp, main: first });
+    ROUTES.push({ id: 'r' + Date.now(), part, proc, equip: ($('#stepAddEq') || {}).value || s.equip, emp, main: first });
     commitMaster(`${emp} さんを担当に足しました${first ? '（主担当）' : ''}`);
   }
   else if (d.setmain) {
@@ -1681,6 +1783,12 @@ document.addEventListener('click', e => {
     if (later) openEditor(`${code}|${later.proc}`);
   }
   // 人・設備
+  else if (d.partview) partView = d.partview;
+  else if (b.id === 'clearSearch') partQuery = '';
+  else if (d.openstep) { partView = 'card'; goPartCard(d.openstep); }
+  else if (d.planpart) { view = 'plan'; planF = { team: '', emp: '', part: d.planpart }; }
+  else if (b.id === 'xferCancel') { xfer = null; toast('異動をやめました'); }
+  else if (b.id === 'xferOk') applyXfer();
   else if (b.id === 'ppAdd') {
     const name = $('#pp-name').value.trim(), team = $('#pp-team').value === '__new' ? $('#pp-newteam').value.trim() : $('#pp-team').value;
     if (!name || !team) { toast('名前と係を入れてください'); return; }
@@ -1698,11 +1806,12 @@ document.addEventListener('click', e => {
   else if (d.deleq) { const p = EQUIP_PROC[d.deleq]; PROCESSES[p] = PROCESSES[p].filter(e => e !== d.deleq); commitMaster('外しました'); }
   else if (b.id === 'resetAll') {
     if (!confirm('この端末の品番・マスター・チェック項目・日報・受注・出勤を最初の状態に戻しますか？')) return;
-    ['kn-routes', 'kn-checks', 'kn-reports', 'kn-att', 'kn-draft', 'kn-queue', 'kn-parts', 'kn-emps', 'kn-procs', 'kn-rates', 'kn-ct', 'kn-orders'].forEach(LS.del);
+    ['kn-routes', 'kn-checks', 'kn-reports', 'kn-att', 'kn-draft', 'kn-queue', 'kn-parts', 'kn-emps', 'kn-procs', 'kn-rates', 'kn-ct', 'kn-orders', 'kn-xferlog'].forEach(LS.del);
     EMPLOYEES = clone(DEFAULT_EMPLOYEES); PROCESSES = clone(DEFAULT_PROCESSES); RATES = clone(DEFAULT_RATES); PARTS = clone(DEFAULT_PARTS); CT = clone(DEFAULT_CT);
     rebuild();
     ROUTES = clone(DEFAULT_ROUTES); CHECKS = clone(DEFAULT_CHECKS); reports = SEED(); ATT = {}; ORDERS = clone(DEFAULT_ORDERS);
     QUEUE = [{ id: 'q1', part: '7C22031150', proc: 'K', emp: '中村 光', time: '09:40' }];
+    XFER_LOG = []; xfer = null;
     masterEdit = null; wiz = null; lastAdded = null; FILTERS.master = {}; planF = { team: '', emp: '', part: '' }; planHours = 8; toast('最初の状態に戻しました');
   }
   else return;
@@ -1752,21 +1861,22 @@ document.addEventListener('change', e => {
     ROUTES.forEach(r => { if (r.part === part && r.proc === proc) r.equip = t.value; });
     commitMaster(`工程 ${proc} の設備を ${eqLabel(t.value)} にしました`); render();
   }
+  else if (t.dataset.routeeq) {
+    const r = ROUTES.find(x => x.id === t.dataset.routeeq); r.equip = t.value;
+    commitMaster(`${r.emp} さんの設備を ${eqLabel(t.value)} にしました${r.main ? '（主担当なので生産管理もこの設備で計算します）' : ''}`); render();
+  }
   else if (t.dataset.ct) { CT[t.dataset.ct] = parseFloat(t.value) || 0; commitMaster('サイクルタイムを保存しました。生産管理の計算に使われます'); }
   else if (t.dataset.empteam) {
-    const e = EMPLOYEES.find(x => x.name === t.dataset.empteam), from = e.team;
+    const name = t.dataset.empteam, from = teamOf(name);
     let to = t.value;
-    if (to === '__new') { to = (prompt('新しい係の名前を入れてください（例 6係）') || '').trim(); if (!to) { render(); return; } }
-    if (to === from) return;
-    const n = ROUTES.filter(r => r.emp === e.name).length;
-    e.team = to; commitMaster(`${e.name} さんを ${from} から ${to} に移しました${n ? `（担当 ${n}件はそのまま）` : ''}`);
-    Object.keys(FILTERS).forEach(k => { if (FILTERS[k].emp === e.name) FILTERS[k].team = to; });
-    prune(routeRows(), FILTERS.master);
-    if (planF.emp === e.name) planF.team = to;
-    if (planF.team && !TEAMS.includes(planF.team)) planF = { team: '', emp: '', part: '' };
-    if (f.emp === e.name) f.team = to;
-    render();
+    if (to === '__new') { to = (prompt('新しい係の名前を入れてください（例 6係）') || '').trim(); }
+    if (!to || to === from) { render(); return; }
+    startXfer(name, to); render();
+    setTimeout(() => { const el = document.querySelector('.xfer'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 30);
   }
+  else if (t.dataset.xa) { xfer.routes[+t.dataset.xa].action = t.value; render(); }
+  else if (t.dataset.xt) { xfer.routes[+t.dataset.xt].target = t.value; render(); }
+
   else if (t.dataset.rate) { RATES[t.dataset.rate] = Math.min(100, Math.max(1, +t.value || 70)) / 100; commitMaster('稼働率を保存しました'); }
   else if (t.id === 'pp-team' || t.id === 'eq-proc') { /* 新しい係・工程の入力欄はいつも出している */ }
   else if (t.dataset.td) {
