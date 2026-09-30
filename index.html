@@ -154,6 +154,13 @@
   .mvs { float: right; display: flex; gap: 2px; }
   .mv { border: 1px solid var(--line); background: #fff; border-radius: 6px; width: 28px; height: 26px; cursor: pointer; font-size: 10px; padding: 0; color: var(--sub); }
   .prog { height: 4px; background: #e5e7eb; border-radius: 2px; margin-top: 4px; width: 60px; } .prog div { height: 4px; background: var(--accent); border-radius: 2px; }
+  .photos { border-top: 1px solid #e5e7eb; margin-top: 14px; padding-top: 4px; }
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-top: 10px; }
+  .thumb { border: 1px solid var(--line); border-radius: 10px; padding: 6px; background: #fff; }
+  .thumb img { width: 100%; height: 110px; object-fit: cover; border-radius: 6px; display: block; background: #f3f4f6; }
+  .thumb-foot { display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-top: 6px; } .thumb .mini { white-space: nowrap; }
+  .ocr { border: 2px dashed #a78bfa; background: #faf5ff; border-radius: 12px; padding: 14px; margin-top: 12px; }
+  .ocrtext { white-space: pre-wrap; font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 0; }
   .progress { height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; } .progress div { height: 10px; background: var(--ok); }
   .modes { display: flex; flex-wrap: wrap; gap: 4px; background: #f3f4f6; border-radius: 10px; padding: 4px; margin-bottom: 12px; }
   .modes button { border: 0; background: transparent; padding: 10px 14px; border-radius: 8px; font: inherit; font-size: 14px; cursor: pointer; color: var(--sub); }
@@ -341,7 +348,7 @@ function buildReport(o) {
   const items = itemsFor(o.part, o.proc);
   const results = items.map(it => ({ n: it.n, name: it.name, spec: specText(it), value: o.values[it.n], judge: judge(it, o.values[it.n]) }));
   return { ngQty: 0, memo: '', called: null, confirmed: null, ...o, id: 'x' + o.no, team: teamOf(o.emp), role: roleOf(o.part, o.proc, o.emp),
-           results, status: items.length ? worst(results.map(r => r.judge)) : '項目なし' };
+           results, status: items.length ? worst(results.map(r => r.judge)) : (o.photos || []).some(x => x.kind === '紙のチェックシート') ? '紙の写真' : '項目なし' };
 }
 function seed(no, time, emp, part, proc, equip, qty, phase, override = {}, extra = {}) {
   const values = {};
@@ -376,6 +383,85 @@ const TPL_FOR_PROC = { LNC: '旋盤（外径・内径・長さ）', LNC2: '旋�
 let QUEUE = LS.get('kn-queue', null) || [{ id: 'q1', part: '7C22031150', proc: 'K', emp: '中村 光', time: '09:40' }];
 const saveQueue = () => LS.set('kn-queue', QUEUE);
 const QIMG = {};
+const PHOTO_KINDS = ['紙のチェックシート', '現品', 'NG箇所'];
+const KIND_CLASS = { '紙のチェックシート': 'b-副', '現品': 'b-OK', 'NG箇所': 'b-NG' };
+let ocrOpen = null;
+function shrinkImage(file, max = 900) {
+  return new Promise(resolve => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = () => resolve(fr.result);
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+const svgUrl = svg => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+function samplePhoto(kind, part, proc) {
+  if (kind === '紙のチェックシート') {
+    const items = itemsFor(part, proc).length ? itemsFor(part, proc) : aiDraftFor(part, proc);
+    return svgUrl(paperSvg(part, proc, items).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
+  }
+  const ng = kind === 'NG箇所';
+  return svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#57534e"/>
+    <rect x="70" y="80" width="260" height="140" rx="10" fill="#a8a29e" stroke="#e7e5e4" stroke-width="3"/>
+    <rect x="70" y="120" width="260" height="60" fill="#d6d3d1" opacity=".5"/>
+    ${ng ? '<circle cx="250" cy="110" r="30" fill="none" stroke="#ef4444" stroke-width="5"/>' : ''}
+    <text x="200" y="270" text-anchor="middle" font-size="18" fill="#fafaf9">${kind}の写真（見本）${part}</text></svg>`);
+}
+function ocrMock(items, part, proc) {
+  const src = items.length ? items : aiDraftFor(part, proc);
+  const fills = {};
+  const lines = [`検査チェックシート  品番 ${part}  工程 ${proc}`];
+  src.forEach((it, i) => {
+    let v = 'OK';
+    if (it.type === 'num') { v = (it.nom + it.step * ((it.n % 3) - 1) * (it.tp > 0 && it.tm < 0 ? 1 : 0) + (it.tp === 0 ? -it.step * 2 : it.tm === 0 ? it.step * 2 : 0)).toFixed(decOf(it.step)); }
+    fills[it.n] = v;
+    lines.push(`${i + 1}  ${it.name}  ${specText(it)}  ${it.tool}  ${it.type === 'num' ? v : '✓'}`);
+  });
+  return { lines, fills: items.length ? fills : null };
+}
+function photosHtml(items) {
+  const needPaper = items.length === 0;
+  const ph = f.photos || [];
+  const op = ocrOpen && ph.find(x => x.id === ocrOpen);
+  const ocr = op ? ocrMock(items, f.part, f.proc) : null;
+  return `
+    <div class="photos">
+      <div class="group-label">写真を付ける（何枚でも・${needPaper ? '<b style="color:var(--ng)">紙のチェックシートの写真が必要です</b>' : '任意'}）</div>
+      <div class="addrow">${PHOTO_KINDS.map(k => `
+        <label class="chip ${k === '紙のチェックシート' && needPaper ? 'dark' : ''}" style="cursor:pointer">${k}を撮る<input type="file" accept="image/*" capture="environment" multiple hidden data-photo="${k}"></label>`).join('')}
+        <span class="note">写真がないとき：</span>${PHOTO_KINDS.map(k => `<button class="linkbtn" data-samplephoto="${k}">${k}の見本を付ける</button>`).join('')}
+      </div>
+      ${ph.length ? `<div class="thumbs">${ph.map(x => `
+        <div class="thumb"><img src="${x.src}" alt="${x.kind}">
+          <div class="thumb-foot"><span class="badge ${KIND_CLASS[x.kind]}">${x.kind}</span><button class="mini del" data-delphoto="${x.id}">外す</button></div>
+          ${x.kind === '紙のチェックシート' ? `<button class="mini ${ocrOpen === x.id ? 'dark' : ''}" data-ocr="${x.id}" style="width:100%;margin-top:6px">文字を読む（OCR・今後）</button>` : ''}
+        </div>`).join('')}</div>` : ''}
+      ${op ? `<div class="ocr">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">
+          <b>文字の読み取り（OCR）</b><span class="badge b-副">今後の機能・イメージ</span><button class="mini" data-ocrclose="1">閉じる</button></div>
+        <div class="row" style="margin-top:10px">
+          <div><img src="${op.src}" alt="紙のチェックシート" style="width:100%;border-radius:8px"></div>
+          <div><div class="group-label" style="margin-top:0">読み取った文字</div><pre class="ocrtext">${esc(ocr.lines.join('\n'))}</pre>
+            ${ocr.fills ? `<div class="group-label">チェック項目に当てはめると</div>
+              <table class="list" style="min-width:0">${items.map(it => { const v = ocr.fills[it.n], j = judge(it, v); return `<tr><td><span class="ball">${it.n}</span></td><td>${esc(it.name)}</td><td>${esc(v)}</td><td><span class="badge b-${j}">${j}</span></td></tr>`; }).join('')}</table>
+              <button class="mini dark" data-ocrapply="1" style="margin-top:10px">この値を入れる（試し）</button>`
+            : '<p class="note">この品番×工程は項目がまだないので、読み取った内容は管理者の「登録待ち」に下書きとして届きます。</p>'}
+          </div>
+        </div>
+        <p class="note" style="margin-bottom:0">本番では、紙の写真の文字（手書きの数字を含む）を OCR で読み取り、各項目に自動で入れます。作業者は読み取り結果を確かめて直すだけになります。</p>
+      </div>` : ''}
+    </div>`;
+}
 let ckMode = 'table', tplSel = null, tplDraft = null, copyFrom = null, aiDraft = null, aiImg = null;
 let ATT = LS.get('kn-att', {});
 function nextHM() {
@@ -426,7 +512,7 @@ function filterBar(key, rows, sel, allLabel = 'すべて') {
 
 // ---------- 状態 ----------
 let view = 'input';
-const blankF = () => ({ team: null, emp: null, equip: null, proc: null, part: null, values: {}, phase: null, qty: 0, ngQty: 0, memo: '', called: null });
+const blankF = () => ({ team: null, emp: null, equip: null, proc: null, part: null, values: {}, phase: null, qty: 0, ngQty: 0, memo: '', called: null, photos: [] });
 let f = blankF();
 let editAssign = false, tried = false, selected = null, masterEdit = null;
 const FILTERS = { admin: {}, plan: {}, master: {} };
@@ -524,6 +610,7 @@ function renderInput() {
   if (!f.phase) missing.push('区分（初品・中間・終品）');
   if (items.some(it => judge(it, f.values[it.n]) === '未')) missing.push('チェック項目（基準どおりでも押して確認）');
   if (hasNG && !f.called) missing.push('NG の対応（再測定するか係長を呼ぶ）');
+  if (items.length === 0 && !(f.photos || []).some(x => x.kind === '紙のチェックシート')) missing.push('紙のチェックシートの写真');
   if (!(f.qty > 0)) missing.push('生産数');
 
   $('#app').innerHTML = `
@@ -554,20 +641,18 @@ function renderInput() {
     <div class="group-label" style="margin-top:0">区分</div>
     <div class="chips" style="margin-bottom:12px">${['初品', '中間', '終品'].map(p => `<button class="chip ${f.phase === p ? 'on' : ''}" data-phase="${p}">${p}</button>`).join('')}</div>
     ${hasNG ? `<div class="ngpanel"><div><b>NG が出ています。</b>その場でどうするか決めてください。${f.called ? `<br>係長を呼びました（${f.called}）。このまま登録できます。` : ''}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="re" data-ngact="re">測り直す</button>${f.called ? '' : '<button class="call" data-ngact="call">係長を呼ぶ</button>'}</div></div>` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="re" data-ngact="re">測り直す</button>${f.called ? '' : '<button class="call" data-ngact="call">係長を呼ぶ</button>'}
+        <label class="re" style="cursor:pointer;padding:12px 18px;border-radius:10px">NG箇所を撮る<input type="file" accept="image/*" capture="environment" hidden data-photo="NG箇所"></label></div></div>` : ''}
     ${items.length === 0 ? `<div class="note" style="border:1px dashed var(--line);border-radius:10px;padding:14px">この品番×工程（${f.part} × ${f.proc}）のチェック項目はまだありません。<br>
-      <b>今日は紙のチェックシートに書いてください。</b>その紙を撮って送ると、管理者がそれを元に登録します。次からはタブレットで入力できます。
-      <div class="addrow" style="margin-top:10px">
-        ${QUEUE.some(q => q.part === f.part && q.proc === f.proc) ? '<span class="badge b-注意">この品番×工程の紙は、もう送ってあります（登録待ち）</span>' : `
-        <label class="chip dark" style="cursor:pointer">紙のチェックシートを撮って送る<input type="file" accept="image/*" capture="environment" id="paperFile" hidden></label>
-        <button class="linkbtn" data-sendpaper="1">写真なしで送る（試し）</button>`}
-      </div>
-      <p class="note" style="margin-bottom:0">日報（生産数）は、このまま登録できます。</p></div>` : `
+      <b>今日は紙のチェックシートに書いて、その写真を下で付けてください。</b>付けた写真が、この日報のチェックの記録になります。
+      同じ写真が管理者の「登録待ち」にも届き、登録されると次からはタブレットで入力できます。
+      ${QUEUE.some(q => q.part === f.part && q.proc === f.proc) ? '<br><span class="badge b-注意">この品番×工程は、すでに登録待ちです</span>' : ''}</div>` : `
     <p class="note" style="margin-top:0">寸法は基準の値が最初から入っています。測った値に合わせて ± で動かしてください（外側のボタンは10倍の幅）。そのままなら「基準どおり」を押します。</p>
     <div class="row chk">
       <div class="drawing" id="drawingBox">${drawingSvg(f.part, items, f.values)}<div class="cap">${f.part} ${PARTS[f.part].name}　青い番号が今回のチェック項目</div></div>
       <div>${items.map(it => itemRow(it, f.values)).join('')}</div>
     </div>`}
+    ${photosHtml(items)}
   </div>
 
   <div class="card">
@@ -592,11 +677,18 @@ function submit() {
   tried = true;
   const items = currentItems();
   const hasNG = items.some(it => judge(it, f.values[it.n]) === 'NG');
-  const ok = f.emp && f.equip && f.phase && f.qty > 0 && !items.some(it => judge(it, f.values[it.n]) === '未') && (!hasNG || f.called);
+  const paper = (f.photos || []).filter(x => x.kind === '紙のチェックシート');
+  const ok = f.emp && f.equip && f.phase && f.qty > 0 && !items.some(it => judge(it, f.values[it.n]) === '未') && (!hasNG || f.called) && (items.length > 0 || paper.length > 0);
   if (!ok) { render(); return; }
   const no = Math.max(52310, ...reports.map(r => r.no)) + 1;
-  const r = buildReport({ no, time: nextHM(), emp: f.emp, part: f.part, proc: f.proc, equip: f.equip, qty: f.qty, ngQty: f.ngQty, memo: f.memo, phase: f.phase, values: { ...f.values }, called: f.called });
+  const r = buildReport({ no, time: nextHM(), emp: f.emp, part: f.part, proc: f.proc, equip: f.equip, qty: f.qty, ngQty: f.ngQty, memo: f.memo, phase: f.phase, values: { ...f.values }, called: f.called, photos: (f.photos || []).slice() });
   reports.push(r); saveReports();
+  if (items.length === 0 && paper.length) {
+    const q = QUEUE.find(x => x.part === f.part && x.proc === f.proc);
+    if (q) q.img = q.img || paper[0].src;
+    else QUEUE.push({ id: 'q' + Date.now(), part: f.part, proc: f.proc, emp: f.emp, time: r.time, img: paper[0].src });
+    saveQueue();
+  }
   toast(`日報番号 ${no} で登録しました${r.role === '外' ? '（決まりにない人として管理者に知らせます）' : ''}`);
   clearPart(); render(); window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -647,7 +739,7 @@ function renderAdmin() {
     ${ngs.length === 0 ? '<div class="note">NG はありません。</div>' : ngs.map(r => `
       <div class="ngrow">
         <div><span class="badge b-NG">NG</span>　${r.no}　${r.time}　${r.emp}（${r.team}）　${r.part} ${PARTS[r.part].name}　${r.proc}・${eqLabel(r.equip)}　${r.phase}
-          ${r.called ? `<span class="badge b-注意">現場から係長呼び出し ${r.called}</span>` : ''}<br>
+          ${r.called ? `<span class="badge b-注意">現場から係長呼び出し ${r.called}</span>` : ''}${(r.photos || []).some(x => x.kind === 'NG箇所') ? '<span class="badge b-NG">NG箇所の写真あり</span>' : ''}<br>
           <span class="spec">${r.results.filter(x => x.judge === 'NG').map(x => `${x.name} ${x.spec} → ${x.value}`).join('、')}</span></div>
         ${r.confirmed ? `<span class="done">確認済み：${r.confirmed}</span>` : `
         <div style="display:flex;gap:6px"><select id="act-${r.id}"><option>再測定</option><option>再加工</option><option>廃棄</option><option>特別採用</option></select>
@@ -657,11 +749,11 @@ function renderAdmin() {
   <div class="card">
     <h2>今日の報告（行を押すと中身と図面が出ます）</h2>
     <div class="tablewrap"><table class="list">
-      <tr><th>日報番号</th><th>時刻</th><th>名前</th><th>係</th><th>設備</th><th>工程</th><th>品番</th><th>区分</th><th>生産数</th><th>不良</th><th>チェック</th></tr>
+      <tr><th>日報番号</th><th>時刻</th><th>名前</th><th>係</th><th>設備</th><th>工程</th><th>品番</th><th>区分</th><th>生産数</th><th>不良</th><th>チェック</th><th>写真</th></tr>
       ${list.map(r => `<tr class="click ${selected === r.id ? 'sel' : ''}" data-sel="${r.id}">
         <td>${r.no}</td><td>${r.time}</td><td>${r.emp}${r.role !== '主' ? ` <span class="badge b-${r.role}">${ROLE_TXT[r.role]}</span>` : ''}</td><td>${r.team}</td>
         <td>${eqLabel(r.equip)}</td><td>${r.proc}</td><td>${r.part}<br><span class="spec">${PARTS[r.part].name}</span></td><td>${r.phase || ''}</td>
-        <td>${r.qty}</td><td>${r.ngQty || ''}</td><td><span class="badge b-${r.status === '項目なし' ? '未' : r.status}">${r.status}</span></td></tr>`).join('')}
+        <td>${r.qty}</td><td>${r.ngQty || ''}</td><td><span class="badge b-${['項目なし', '紙の写真'].includes(r.status) ? '未' : r.status}">${r.status}</span></td><td>${(r.photos || []).length ? `${r.photos.length}枚` : ''}</td></tr>`).join('')}
     </table></div>
   </div>
   ${sr ? `<div class="card">
@@ -670,7 +762,9 @@ function renderAdmin() {
       <div class="drawing">${drawingSvg(sr.part, srItems, sr.values)}<div class="cap">図面に実測値を重ねて表示</div></div>
       <div><table class="list" style="min-width:0">${sr.results.map(x => `<tr><td><span class="ball">${x.n}</span></td><td>${esc(x.name)}<div class="spec">${esc(x.spec)}</div></td><td>${esc(x.value)}</td><td><span class="badge b-${x.judge}">${x.judge}</span></td></tr>`).join('')}</table>
       <p class="note">生産数 ${sr.qty}　不良 ${sr.ngQty}${sr.memo ? `<br>メモ：${esc(sr.memo)}` : ''}</p></div>
-    </div>` : '<div class="note">この品番×工程はチェック項目がありません。</div>'}
+    </div>` : '<div class="note">この品番×工程はチェック項目がまだなく、紙の写真で記録しています。</div>'}
+    ${(sr.photos || []).length ? `<div class="group-label">付いている写真</div><div class="thumbs">${sr.photos.map(x => `<div class="thumb"><img src="${x.src}" alt="${x.kind}" style="height:160px"><div class="thumb-foot"><span class="badge ${KIND_CLASS[x.kind]}">${x.kind}</span></div></div>`).join('')}</div>` : ''}
+
   </div>` : ''}`;
 }
 
@@ -872,7 +966,7 @@ function openEditor(key) {
   const [p, q] = key.split('|');
   const queued = QUEUE.find(x => x.part === p && x.proc === q);
   ckMode = itemsFor(p, q).length ? 'table' : queued ? 'ai' : 'tpl';
-  if (ckMode === 'ai') { aiImg = QIMG[queued.id] || 'sample'; aiDraft = aiDraftFor(p, q); }
+  if (ckMode === 'ai') { aiImg = queued.img || QIMG[queued.id] || 'sample'; aiDraft = aiDraftFor(p, q); }
   if (ckMode === 'tpl') setTpl(TPL_FOR_PROC[q] || Object.keys(TEMPLATES)[0]);
 }
 function setTpl(name) {
@@ -998,7 +1092,7 @@ function renderMaster() {
       届いたものと、よく作る品番から順に登録すれば、紙が1枚ずつ減っていきます。</p>
     ${QUEUE.length ? `<div class="group-label">現場から届いた紙のシート（${QUEUE.length}件）</div>
       ${QUEUE.map(q => `<div class="ngrow" style="border-color:#fde68a;background:#fffbeb">
-        <div><span class="badge b-注意">登録待ち</span>　${q.part} ${PARTS[q.part].name} × 工程 ${q.proc}　<span class="spec">${q.emp} さん・${q.time}${QIMG[q.id] ? '・写真あり' : ''}</span></div>
+        <div><span class="badge b-注意">登録待ち</span>　${q.part} ${PARTS[q.part].name} × 工程 ${q.proc}　<span class="spec">${q.emp} さん・${q.time}${q.img || QIMG[q.id] ? '・写真あり' : ''}</span></div>
         <button class="mini dark" data-fromqueue="${q.id}">写真から作る</button></div>`).join('')}` : ''}
     ${todo.length ? `<div class="group-label">まだ項目がない品番×工程（日報の多い順）</div>
       <div class="tablewrap"><table class="list" style="min-width:560px">
@@ -1142,7 +1236,7 @@ document.addEventListener('click', e => {
   else if (d.ckmode) {
     ckMode = d.ckmode;
     if (ckMode === 'tpl' && !tplDraft) setTpl(TPL_FOR_PROC[masterEdit.split('|')[1]] || Object.keys(TEMPLATES)[0]);
-    if (ckMode === 'ai' && !aiDraft) { const [p, q] = masterEdit.split('|'); const qd = QUEUE.find(x => x.part === p && x.proc === q); if (qd) { aiImg = QIMG[qd.id] || 'sample'; aiDraft = aiDraftFor(p, q); } }
+    if (ckMode === 'ai' && !aiDraft) { const [p, q] = masterEdit.split('|'); const qd = QUEUE.find(x => x.part === p && x.proc === q); if (qd) { aiImg = qd.img || QIMG[qd.id] || 'sample'; aiDraft = aiDraftFor(p, q); } }
   }
   else if (d.tpl) setTpl(d.tpl);
   else if (b.id === 'tplApply') {
@@ -1159,8 +1253,13 @@ document.addEventListener('click', e => {
     toast('写しました。基準値など違うところだけ直してください');
   }
   else if (b.id === 'aiSample') { aiImg = 'sample'; aiDraft = aiDraftFor(...masterEdit.split('|')); }
-  else if (d.fromqueue) { const q = QUEUE.find(x => x.id === d.fromqueue); openEditor(`${q.part}|${q.proc}`); ckMode = 'ai'; aiImg = QIMG[q.id] || 'sample'; aiDraft = aiDraftFor(q.part, q.proc); }
+  else if (d.fromqueue) { const q = QUEUE.find(x => x.id === d.fromqueue); openEditor(`${q.part}|${q.proc}`); ckMode = 'ai'; aiImg = q.img || QIMG[q.id] || 'sample'; aiDraft = aiDraftFor(q.part, q.proc); }
   else if (b.id === 'aiApply') { const n = aiDraft.filter(it => it.use).length; applyItems(aiDraft); toast(`${n} 項目を登録しました。次からこの品番×工程はタブレットで入力できます（紙はいりません）`); }
+  else if (d.samplephoto) { f.photos = [...(f.photos || []), { id: 'p' + Date.now(), kind: d.samplephoto, src: samplePhoto(d.samplephoto, f.part, f.proc) }]; toast(`${d.samplephoto}の写真（見本）を付けました`); }
+  else if (d.delphoto) { f.photos = f.photos.filter(x => x.id !== d.delphoto); if (ocrOpen === d.delphoto) ocrOpen = null; }
+  else if (d.ocr) ocrOpen = ocrOpen === d.ocr ? null : d.ocr;
+  else if (d.ocrclose) ocrOpen = null;
+  else if (d.ocrapply) { const o = ocrMock(currentItems(), f.part, f.proc); Object.assign(f.values, o.fills); ocrOpen = null; toast('読み取った値を入れました。紙と見比べて確かめてください'); }
   else if (d.sendpaper) { QUEUE.push({ id: 'q' + Date.now(), part: f.part, proc: f.proc, emp: f.emp || '（担当なし）', time: nowHM() }); saveQueue(); toast('管理者に送りました。今日は紙のシートに書いてください'); }
   else if (b.id === 'closeCk') masterEdit = null;
   else if (b.id === 'addItem') {
@@ -1205,6 +1304,13 @@ document.addEventListener('change', e => {
   }
   else if (t.id === 'copySrc') { copyFrom = t.value || null; render(); }
   else if (t.id === 'aiFile' && t.files[0]) { aiImg = URL.createObjectURL(t.files[0]); aiDraft = aiDraftFor(...masterEdit.split('|')); render(); }
+  else if (t.dataset.photo && t.files.length) {
+    const kind = t.dataset.photo;
+    Promise.all([...t.files].map(fl => shrinkImage(fl))).then(srcs => {
+      f.photos = [...(f.photos || []), ...srcs.map((src, i) => ({ id: 'p' + Date.now() + i, kind, src }))];
+      toast(`${kind}の写真を${srcs.length}枚付けました`); render();
+    });
+  }
   else if (t.id === 'paperFile' && t.files[0]) {
     const id = 'q' + Date.now();
     QIMG[id] = URL.createObjectURL(t.files[0]);
