@@ -30,5 +30,5 @@ QRから直接開く例: https://tsubasagit.github.io/koutei-nippo-prototype/?pa
 
 - `index.html` の1ファイルだけで動きます（ビルド不要）
 - QRの表示に [qrcodejs](https://cdnjs.com/libraries/qrcodejs) を CDN から読み込みます
-- 保存はブラウザの localStorage です。「決まりの修正」画面のいちばん下のボタンで最初の状態に戻せます
+- 保存はブラウザの localStorage です。「品番・マスター」画面のいちばん下のボタンで最初の状態に戻せます
 - 「AI」と書いた欄は、決まったルールで文章を作っているイメージです。AI にはつないでいません
