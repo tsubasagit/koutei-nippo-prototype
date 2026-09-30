@@ -222,6 +222,7 @@
   .mini-sel { padding: 3px 6px; font-size: 12px; }
   .ppill { display: inline-flex; flex-direction: column; align-items: flex-start; border-width: 2px; border-style: solid; border-radius: 8px; padding: 3px 8px; font: inherit; font-size: 13px; font-weight: 600; background: #fff; cursor: pointer; line-height: 1.3; }
   .ppill small { font-weight: 400; font-size: 11px; color: var(--sub); }
+  .pedit { background: #f8fbff; border: 1px dashed var(--accent); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
   .progress { height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; } .progress div { height: 10px; background: var(--ok); }
   .modes { display: flex; flex-wrap: wrap; gap: 4px; background: #f3f4f6; border-radius: 10px; padding: 4px; margin-bottom: 12px; }
   .modes button { border: 0; background: transparent; padding: 10px 14px; border-radius: 8px; font: inherit; font-size: 14px; cursor: pointer; color: var(--sub); }
@@ -333,7 +334,26 @@ function saveMaster() {
   LS.set('kn-procs', PROCESSES); LS.set('kn-rates', RATES); LS.set('kn-ct', CT);
 }
 const itemsFor = (part, proc) => CHECKS[`${part}|${proc}`] || [];
-const routeRows = () => ROUTES.map(r => ({ ...r, team: teamOf(r.emp) }));
+const routeRows = () => ROUTES.filter(r => PARTS[r.part] && !PARTS[r.part].archived).map(r => ({ ...r, team: teamOf(r.emp) }));
+const activeParts = () => Object.keys(PARTS).filter(p => !PARTS[p].archived);
+function renamePart(oldC, newC) {
+  PARTS[newC] = PARTS[oldC]; delete PARTS[oldC];
+  ROUTES.forEach(r => { if (r.part === oldC) r.part = newC; });
+  [CHECKS, CT].forEach(m => Object.keys(m).forEach(k => { const [pp, q] = k.split('|'); if (pp === oldC) { m[`${newC}|${q}`] = m[k]; delete m[k]; } }));
+  ORDERS.forEach(o => { if (o.part === oldC) o.part = newC; });
+  QUEUE.forEach(q => { if (q.part === oldC) q.part = newC; });
+  reports.forEach(r => { if (r.part === oldC) r.part = newC; });
+  saveOrders(); saveQueue(); saveReports();
+  if (masterEdit && masterEdit.split('|')[0] === oldC) masterEdit = `${newC}|${masterEdit.split('|')[1]}`;
+}
+function renameEquip(oldE, newE) {
+  const proc = EQUIP_PROC[oldE];
+  PROCESSES[proc] = PROCESSES[proc].map(e => e === oldE ? newE : e);
+  RATES[newE] = RATES[oldE]; delete RATES[oldE];
+  ROUTES.forEach(r => { if (r.equip === oldE) r.equip = newE; });
+  ORDERS.forEach(o => { if (o.eq) Object.keys(o.eq).forEach(k => { if (o.eq[k] === oldE) o.eq[k] = newE; }); });
+  saveOrders();
+}
 const procsOf = part => {
   const used = new Set(ROUTES.filter(r => r.part === part).map(r => r.proc));
   const order = PARTS[part].route;
@@ -604,6 +624,7 @@ $('#today').textContent = new Date().toLocaleDateString('ja-JP', { year: 'numeri
 
 function scan(part, proc, push = true) {
   if (!PARTS[part]) { toast('登録されていない品番です'); return; }
+  if (PARTS[part].archived) { toast('この品番は使わなくなった品番です。管理者に確認してください'); return; }
   if (!proc || !PARTS[part]) proc = procsOf(part)[0] || PARTS[part].route[0];
   const r = mainRoute(part, proc);
   f = { ...blankF(), part, proc, equip: r ? r.equip : null, emp: r ? r.emp : null, team: r ? teamOf(r.emp) : null };
@@ -664,7 +685,7 @@ function renderScan() {
   </div>
   <div class="card">
     <h2>試し：下のQRを押すと、読んだことにします</h2>
-    ${Object.keys(PARTS).map(part => `
+    ${activeParts().map(part => `
       <div class="group-label">${part} ${PARTS[part].name}（工程の順：${procsOf(part).join(' → ')}）</div>
       <div class="qrgrid">${procsOf(part).map(proc => {
         const r = mainRoute(part, proc);
@@ -1045,7 +1066,7 @@ function renderPlan() {
   ${addOrd ? `<div class="card" id="addOrder">
     <h2>受注を足す <button class="mini" id="aoClose">閉じる</button></h2>
     <div class="addrow">
-      <select id="ao-part" class="fsel"><option value="">品番を選ぶ</option>${Object.keys(PARTS).filter(p => PARTS[p].route.length).map(p => `<option value="${p}" ${addOrd.part === p ? 'selected' : ''}>${p} ${PARTS[p].name}（${PARTS[p].route.join('→')}）</option>`).join('')}</select>
+      <select id="ao-part" class="fsel"><option value="">品番を選ぶ</option>${activeParts().filter(p => PARTS[p].route.length).map(p => `<option value="${p}" ${addOrd.part === p ? 'selected' : ''}>${p} ${PARTS[p].name}（${PARTS[p].route.join('→')}）</option>`).join('')}</select>
       <input id="ao-cust" placeholder="お客様" value="${esc(addOrd.cust || '')}" style="width:120px">
       <input id="ao-qty" type="number" min="1" placeholder="数量" value="${addOrd.qty || ''}" style="width:90px"><span class="spec">個</span>
       <span class="spec">納期</span><input id="ao-due" type="date" min="${isoDate(new Date())}" value="${addOrd.due || ''}">
@@ -1142,7 +1163,7 @@ function setTpl(name) {
 
 let masterTab = 'parts', partQuery = '', onlyIssues = false, addStepFor = null, wiz = null, lastAdded = null;
 let xfer = null;
-let partView = 'card';
+let partView = 'card', partEditing = null;
 function partTableHtml(parts) {
   return `<div class="card"><div class="tablewrap"><table class="list" style="min-width:820px">
     <tr><th>品番</th><th>名前</th><th>工程の流れ（押すとその工程を開く）</th><th>受注</th><th>状態</th></tr>
@@ -1362,8 +1383,20 @@ function partCardHtml(part) {
       <div><span class="big2">${part}</span> <span style="font-size:17px">${PARTS[part].name}</span>
         <span class="badge ${ok ? 'b-OK' : 'b-注意'}">${ok ? '入力できます' : `あと${issues}か所`}</span>
         ${orders ? `<button class="linkbtn" data-planpart="${part}">受注 ${orders}件を生産管理で見る</button>` : ''}</div>
-      <div class="addrow"><button class="mini" data-addstep="${part}">＋ 工程を足す</button><button class="mini" data-qrpart="${part}">QRを印刷</button></div>
+      <div class="addrow"><button class="mini" data-addstep="${part}">＋ 工程を足す</button><button class="mini" data-qrpart="${part}">QRを印刷</button>
+        <button class="mini" data-clonepart="${part}">これを元に新しい品番</button><button class="mini ${partEditing === part ? 'dark' : ''}" data-editpart="${part}">編集</button></div>
     </div>
+    ${partEditing === part ? `<div class="pedit">
+      <div class="addrow">
+        <span class="spec">品番</span><input id="pe-code" class="fsel" value="${esc(part)}" style="width:150px">
+        <span class="spec">名前</span><input id="pe-name" class="fsel" value="${esc(PARTS[part].name)}" style="width:150px">
+        <span class="spec">図面</span><select id="pe-draw" class="fsel"><option value="">まだない</option>${Object.entries({ boss: 'ボスの図面（見本）', flange: 'フランジの図面（見本）', shaft: 'シャフトの図面（見本）' }).map(([k, v]) => `<option value="${k}" ${PARTS[part].drawing === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+        <button class="mini dark" id="peSave" data-part="${part}">保存</button><button class="mini" id="peCancel">やめる</button>
+      </div>
+      <p class="note">品番を変えると、担当・チェック項目・受注・過去の日報は新しい品番に付け替えます。<b>QR の開く先も変わるので、印刷済みの QR は刷り直してください。</b></p>
+      <div class="addrow"><button class="mini del" id="peArchive" data-part="${part}" ${orders ? 'disabled' : ''}>この品番をしまう（使わなくなった）</button>
+        <span class="note">${orders ? `受注が ${orders}件残っているのでしまえません` : '一覧・タブレット・QR・受注から隠れます。過去の日報は残り、いつでも戻せます'}</span></div>
+    </div>` : ''}
     <div class="flow">${steps.map((s, i) => `${i ? '<span class="arrow">→</span>' : ''}
       <button class="pbox st-${s.st} ${masterEdit === `${part}|${s.proc}` ? 'sel' : ''}" data-pbox="${part}|${s.proc}">
         <span class="pnum">${i + 1}</span><b>${s.proc}</b><span class="spec">${[...new Set(s.routes.map(r => r.equip))].map(eqLabel).join('・') || eqLabel(s.equip)}</span>
@@ -1421,7 +1454,7 @@ function wizardHtml() {
       <div class="addrow" style="margin-top:14px"><button class="mini" id="wzBack">戻る</button><button class="mini dark" id="wzDone">この品番を登録する</button></div>`;
   }
   return `<div class="card wiz">
-    <h2>品番を足す</h2>
+    <h2>品番を足す${w.from ? `<span class="spec">（${w.from} ${PARTS[w.from] ? PARTS[w.from].name : ''} を元に）</span>` : ''}</h2>
     <div class="wz-steps">${['品番と名前', '工程と担当', 'チェック項目'].map((t, i) => `<span class="${w.step === i + 1 ? 'on' : w.step > i + 1 ? 'done' : ''}">${i + 1}. ${t}</span>`).join('<b>›</b>')}</div>
     <div class="wz-grid">
       <div>${body}</div>
@@ -1440,8 +1473,8 @@ function renderMaster() {
   const TABS = [['parts', '品番'], ['assign', '担当の一覧'], ['people', '人・設備'], ['paper', '紙からの移行']];
   let content = '';
   if (masterTab === 'parts') {
-    const parts = Object.keys(PARTS).filter(p => !onlyIssues || !partStatus(p).ok);
-    const allIssues = Object.keys(PARTS).filter(p => !partStatus(p).ok).length;
+    const parts = activeParts().filter(p => !onlyIssues || !partStatus(p).ok);
+    const allIssues = activeParts().filter(p => !partStatus(p).ok).length;
     content = `
     ${lastAdded && PARTS[lastAdded] ? `<div class="okbox" style="margin-bottom:14px">品番 <b>${lastAdded} ${PARTS[lastAdded].name}</b> を登録しました。
       <button class="mini" data-qrpart="${lastAdded}">QRを印刷する</button> <button class="mini" id="goAddOrder" data-part="${lastAdded}">この品番の受注を足す</button></div>` : ''}
@@ -1456,14 +1489,17 @@ function renderMaster() {
       </div>
       <div class="legend2"><span class="pbox-mini st-green"></span>入力できる <span class="pbox-mini st-amber"></span>チェック項目なし <span class="pbox-mini st-red"></span>主担当なし　<span class="spec">工程の箱を押すと、その場で設備・担当・チェック項目を直せます</span></div>
     </div>
-    ${partView === 'table' ? partTableHtml(parts) : parts.map(partCardHtml).join('') || '<div class="card note">当てはまる品番はありません。</div>'}`;
+    ${partView === 'table' ? partTableHtml(parts) : parts.map(partCardHtml).join('') || '<div class="card note">当てはまる品番はありません。</div>'}
+    ${Object.keys(PARTS).some(p => PARTS[p].archived) ? `<div class="card"><h2>しまった品番（${Object.keys(PARTS).filter(p => PARTS[p].archived).length}件）</h2>
+      <p class="note" style="margin-top:0">使わなくなった品番です。過去の日報からは今も見えます。</p>
+      ${Object.keys(PARTS).filter(p => PARTS[p].archived).map(p => `<div class="ngrow" style="border-color:var(--line);background:#f9fafb"><div><b>${p}</b> ${PARTS[p].name}　<span class="spec">${PARTS[p].route.join(' → ')}</span></div><button class="mini" data-unarchive="${p}">戻す</button></div>`).join('')}</div>` : ''}`;
   } else if (masterTab === 'assign') {
     const sel = FILTERS.master, rows = routeRows();
     const { opts, rows: hit } = cascade(rows, sel);
-    const noMain = Object.keys(PARTS).flatMap(p => PARTS[p].route.map(q => [p, q])).filter(([p, q]) => !ROUTES.some(r => r.part === p && r.proc === q && r.main));
+    const noMain = activeParts().flatMap(p => PARTS[p].route.map(q => [p, q])).filter(([p, q]) => !ROUTES.some(r => r.part === p && r.proc === q && r.main));
     const defEmp = sel.emp || (sel.team ? EMPLOYEES.find(e => e.team === sel.team).name : EMPLOYEES[0].name);
     const defEquip = sel.equip || (sel.proc ? PROCESSES[sel.proc][0] : EQUIPS[0]);
-    const defPart = sel.part || Object.keys(PARTS)[0];
+    const defPart = sel.part || activeParts()[0];
     content = `
     <div class="card">
       <p class="note" style="margin-top:0">「この人が、この設備で、この品番のこの工程をやる」の一覧です。<b>左の列で選ぶと、右の列が絞り込まれます。</b>人から探したいときに使います。</p>
@@ -1487,7 +1523,7 @@ function renderMaster() {
       <div class="addrow">
         <select id="addEmp">${TEAMS.map(t => `<optgroup label="${t}">${EMPLOYEES.filter(e => e.team === t).map(e => `<option ${e.name === defEmp ? 'selected' : ''}>${e.name}</option>`).join('')}</optgroup>`).join('')}</select><span>が</span>
         <select id="addEquip">${EQUIPS.map(e => `<option value="${e}" ${e === defEquip ? 'selected' : ''}>${eqLabel(e)}（工程 ${EQUIP_PROC[e]}）</option>`).join('')}</select><span>で</span>
-        <select id="addPart">${Object.keys(PARTS).map(p => `<option value="${p}" ${p === defPart ? 'selected' : ''}>${p} ${PARTS[p].name}</option>`).join('')}</select><span>をやる</span>
+        <select id="addPart">${activeParts().map(p => `<option value="${p}" ${p === defPart ? 'selected' : ''}>${p} ${PARTS[p].name}</option>`).join('')}</select><span>をやる</span>
         <button class="mini dark" id="addRoute">この担当を足す</button>
       </div>
     </div>`;
@@ -1527,7 +1563,7 @@ function renderMaster() {
           <td>${i === 0 ? `<b>${p}</b>` : ''}</td><td>${e ? eqLabel(e) : '<span class="note">設備なし</span>'}</td>
           <td>${e ? `<input type="number" min="1" max="100" data-rate="${e}" value="${Math.round((RATES[e] ?? 0.7) * 100)}" style="width:70px"> %` : ''}</td>
           <td>${e ? `${eqUsed(e)}件` : ''}</td>
-          <td>${e ? `<button class="mini del" data-deleq="${e}" ${eqUsed(e) ? 'disabled title="担当を外してから"' : ''}>外す</button>` : ''}</td></tr>`).join('')).join('')}
+          <td>${e && e !== '-' ? `<button class="mini" data-renameq="${e}">名前を変える</button> ` : ''}${e ? `<button class="mini del" data-deleq="${e}" ${eqUsed(e) ? 'disabled title="担当を外してから"' : ''}>外す</button>` : ''}</td></tr>`).join('')).join('')}
       </table></div>
       <h3>設備を足す</h3>
       <div class="addrow">
@@ -1539,7 +1575,7 @@ function renderMaster() {
       <p class="note">稼働率は、生産管理で「1日に使える時間＝就業時間×稼働率」の計算に使います。本番では日報の実績から自動で出します。</p>
     </div>`;
   } else {
-    const combos = Object.keys(PARTS).flatMap(p => PARTS[p].route.map(q => [p, q]));
+    const combos = activeParts().flatMap(p => PARTS[p].route.map(q => [p, q]));
     const uses = (p, q) => reports.filter(r => r.part === p && r.proc === q).length;
     const todo = combos.filter(([p, q]) => itemsFor(p, q).length === 0).sort((a, b) => uses(...b) - uses(...a));
     const doneN = combos.length - todo.length;
@@ -1578,7 +1614,7 @@ function filterPartCards() {
 // ---------- QR（印刷） ----------
 let qrPart = null;
 function renderQR() {
-  const qparts = Object.keys(PARTS).filter(p => !qrPart || p === qrPart);
+  const qparts = activeParts().filter(p => !qrPart || p === qrPart);
   $('#app').innerHTML = `
   <div class="card noprint">
     <h2>品番×工程ごとのQRコード（印刷用）</h2>
@@ -1784,6 +1820,38 @@ document.addEventListener('click', e => {
   }
   // 人・設備
   else if (d.partview) partView = d.partview;
+  else if (d.editpart) partEditing = partEditing === d.editpart ? null : d.editpart;
+  else if (b.id === 'peCancel') partEditing = null;
+  else if (b.id === 'peSave') {
+    const oldC = d.part, newC = $('#pe-code').value.trim(), name = $('#pe-name').value.trim();
+    if (!newC || !name) { toast('品番と名前を入れてください'); return; }
+    if (newC !== oldC && PARTS[newC]) { toast('その品番はもうあります'); return; }
+    if (newC !== oldC && !confirm(`品番を ${oldC} から ${newC} に変えます。担当・チェック項目・受注・過去の日報も付け替えます。印刷済みのQRは使えなくなるので、刷り直してください。よろしいですか？`)) return;
+    if (newC !== oldC) renamePart(oldC, newC);
+    PARTS[newC].name = name; PARTS[newC].drawing = $('#pe-draw').value || null;
+    partEditing = null; if (partQuery === oldC) partQuery = newC;
+    commitMaster(newC !== oldC ? `品番を ${newC} に変えました。QRを刷り直してください` : '保存しました');
+  }
+  else if (b.id === 'peArchive') {
+    const c0 = d.part;
+    if (!confirm(`${c0} ${PARTS[c0].name} をしまいますか？（一覧・タブレット・QRから隠れます。あとで戻せます）`)) return;
+    PARTS[c0].archived = true; partEditing = null; masterEdit = null; if (partQuery === c0) partQuery = '';
+    commitMaster(`${c0} をしまいました。いちばん下の「しまった品番」から戻せます`);
+  }
+  else if (d.unarchive) { delete PARTS[d.unarchive].archived; commitMaster(`${d.unarchive} を戻しました`); }
+  else if (d.clonepart) {
+    const src = d.clonepart;
+    wiz = { step: 1, code: '', name: PARTS[src].name, drawing: PARTS[src].drawing || '', from: src,
+      steps: PARTS[src].route.map(proc => { const m = mainRoute(src, proc); return { proc, equip: m ? m.equip : (PROCESSES[proc] || [])[0], emp: m ? m.emp : '', ct: CT[`${src}|${proc}`] || 5, items: itemsFor(src, proc).length ? `copy:${src}|${proc}` : 'later' }; }) };
+    lastAdded = null; masterEdit = null; partEditing = null; window.scrollTo({ top: 0, behavior: 'smooth' });
+    toast(`${src} の工程・担当・チェック項目を写しました。品番と名前を入れてください`);
+  }
+  else if (d.renameq) {
+    const oldE = d.renameq, newE = (prompt(`${oldE} の新しい名前`, oldE) || '').trim();
+    if (!newE || newE === oldE) return;
+    if (EQUIPS.includes(newE)) { toast('同じ名前の設備がもうあります'); return; }
+    renameEquip(oldE, newE); commitMaster(`${oldE} を ${newE} に変えました（担当・受注の設備も付け替えました）`);
+  }
   else if (b.id === 'clearSearch') partQuery = '';
   else if (d.openstep) { partView = 'card'; goPartCard(d.openstep); }
   else if (d.planpart) { view = 'plan'; planF = { team: '', emp: '', part: d.planpart }; }
