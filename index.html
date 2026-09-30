@@ -154,6 +154,12 @@
   .mvs { float: right; display: flex; gap: 2px; }
   .mv { border: 1px solid var(--line); background: #fff; border-radius: 6px; width: 28px; height: 26px; cursor: pointer; font-size: 10px; padding: 0; color: var(--sub); }
   .prog { height: 4px; background: #e5e7eb; border-radius: 2px; margin-top: 4px; width: 60px; } .prog div { height: 4px; background: var(--accent); border-radius: 2px; }
+  .progress { height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; } .progress div { height: 10px; background: var(--ok); }
+  .modes { display: flex; flex-wrap: wrap; gap: 4px; background: #f3f4f6; border-radius: 10px; padding: 4px; margin-bottom: 12px; }
+  .modes button { border: 0; background: transparent; padding: 10px 14px; border-radius: 8px; font: inherit; font-size: 14px; cursor: pointer; color: var(--sub); }
+  .modes button.on { background: #fff; color: var(--text); font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .mini:disabled { opacity: .45; cursor: default; }
+  .addrow input { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; }
   body.floor .spec, body.floor .note, body.floor .dev { font-size: 15px; }
   body.floor .it-name { font-size: 18px; }
   body.floor .badge { font-size: 14px; }
@@ -359,6 +365,18 @@ const SEED = () => [
 ];
 let reports = LS.get('kn-reports', null) || SEED();
 const saveReports = () => LS.set('kn-reports', reports);
+const TEMPLATES = {
+  '旋盤（外径・内径・長さ）': [N(1, '外径', 'φ', 0, -0.05, 0, 0.01, '外側マイクロメータ'), N(2, '内径', 'φ', 0, 0, 0.03, 0.01, 'シリンダーゲージ'),
+                             N(3, '全長', '', 0, -0.1, 0.1, 0.05, 'ノギス'), O(4, '面取り', 'C1', '目視'), O(5, 'キズ・打痕', 'なきこと', '目視')],
+  '穴あけ': [N(1, '穴径', 'φ', 0, 0, 0.1, 0.01, 'ピンゲージ'), N(2, '穴位置', 'P.C.D.', 0, -0.1, 0.1, 0.05, 'ノギス'), O(3, 'バリ', 'なきこと', '目視')],
+  'ねじ': [O(1, 'ねじ', '通り／止まり', 'ねじゲージ')],
+  '仕上げ・外観': [O(1, 'キズ・打痕', 'なきこと', '目視'), O(2, '刻印', '品番・ロット', '目視'), O(3, 'サビ', 'なきこと', '目視')],
+};
+const TPL_FOR_PROC = { LNC: '旋盤（外径・内径・長さ）', LNC2: '旋盤（外径・内径・長さ）', L: '旋盤（外径・内径・長さ）', BR: '穴あけ', K: '仕上げ・外観' };
+let QUEUE = LS.get('kn-queue', null) || [{ id: 'q1', part: '7C22031150', proc: 'K', emp: '中村 光', time: '09:40' }];
+const saveQueue = () => LS.set('kn-queue', QUEUE);
+const QIMG = {};
+let ckMode = 'table', tplSel = null, tplDraft = null, copyFrom = null, aiDraft = null, aiImg = null;
 let ATT = LS.get('kn-att', {});
 function nextHM() {
   const last = reports.map(r => r.time).sort().pop() || '07:00';
@@ -537,7 +555,14 @@ function renderInput() {
     <div class="chips" style="margin-bottom:12px">${['初品', '中間', '終品'].map(p => `<button class="chip ${f.phase === p ? 'on' : ''}" data-phase="${p}">${p}</button>`).join('')}</div>
     ${hasNG ? `<div class="ngpanel"><div><b>NG が出ています。</b>その場でどうするか決めてください。${f.called ? `<br>係長を呼びました（${f.called}）。このまま登録できます。` : ''}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="re" data-ngact="re">測り直す</button>${f.called ? '' : '<button class="call" data-ngact="call">係長を呼ぶ</button>'}</div></div>` : ''}
-    ${items.length === 0 ? `<div class="note" style="border:1px dashed var(--line);border-radius:10px;padding:14px">この品番×工程（${f.part} × ${f.proc}）のチェック項目はまだありません。管理者が「決まりの修正」で足すと、ここに出ます。</div>` : `
+    ${items.length === 0 ? `<div class="note" style="border:1px dashed var(--line);border-radius:10px;padding:14px">この品番×工程（${f.part} × ${f.proc}）のチェック項目はまだありません。<br>
+      <b>今日は紙のチェックシートに書いてください。</b>その紙を撮って送ると、管理者がそれを元に登録します。次からはタブレットで入力できます。
+      <div class="addrow" style="margin-top:10px">
+        ${QUEUE.some(q => q.part === f.part && q.proc === f.proc) ? '<span class="badge b-注意">この品番×工程の紙は、もう送ってあります（登録待ち）</span>' : `
+        <label class="chip dark" style="cursor:pointer">紙のチェックシートを撮って送る<input type="file" accept="image/*" capture="environment" id="paperFile" hidden></label>
+        <button class="linkbtn" data-sendpaper="1">写真なしで送る（試し）</button>`}
+      </div>
+      <p class="note" style="margin-bottom:0">日報（生産数）は、このまま登録できます。</p></div>` : `
     <p class="note" style="margin-top:0">寸法は基準の値が最初から入っています。測った値に合わせて ± で動かしてください（外側のボタンは10倍の幅）。そのままなら「基準どおり」を押します。</p>
     <div class="row chk">
       <div class="drawing" id="drawingBox">${drawingSvg(f.part, items, f.values)}<div class="cap">${f.part} ${PARTS[f.part].name}　青い番号が今回のチェック項目</div></div>
@@ -798,34 +823,188 @@ function renderPlan() {
 }
 
 // ---------- 決まりの修正（管理者） ----------
+function paperSvg(part, proc, items) {
+  const rows = items.map((it, i) => {
+    const y = 118 + i * 34;
+    const spec = it.type === 'ok' ? it.label : `${it.label}  ${tolTxt(it.tm)} / ${tolTxt(it.tp)}`;
+    return `<line x1="24" y1="${y - 22}" x2="436" y2="${y - 22}" stroke="#94a3b8"/>
+      <text x="34" y="${y}" class="hw">${i + 1}</text><text x="62" y="${y}" class="hw">${esc(it.name)}</text>
+      <text x="170" y="${y}" class="hw" ${it.conf === 'low' ? 'opacity=".45"' : ''}>${esc(spec)}</text>
+      <text x="320" y="${y}" class="hw" font-size="13" ${it.tool.length > 5 ? 'textLength="78" lengthAdjust="spacingAndGlyphs"' : ''}>${esc(it.tool)}</text><text x="414" y="${y}" class="hw">✓</text>`;
+  }).join('');
+  const h = 130 + items.length * 34;
+  return `<svg viewBox="0 0 460 ${h + 20}" role="img" aria-label="紙のチェックシートの写真（見本）" style="background:#e7e5e4;border-radius:8px">
+    <style>.hw{font-family:"Yu Mincho","Hiragino Mincho ProN",serif;font-size:15px;fill:#1e293b}.pr{font-size:12px;fill:#475569}</style>
+    <g transform="rotate(-1.2 230 ${h / 2})"><rect x="14" y="12" width="432" height="${h}" fill="#fffef8" stroke="#cbd5e1"/>
+    <text x="24" y="38" class="pr">検査チェックシート</text><text x="24" y="62" class="hw">品番 ${part}　工程 ${proc}</text>
+    <text x="34" y="92" class="pr">No</text><text x="62" y="92" class="pr">項目</text><text x="170" y="92" class="pr">規格</text><text x="330" y="92" class="pr">測定具</text><text x="406" y="92" class="pr">判定</text>
+    ${rows}<line x1="24" y1="${h - 4}" x2="436" y2="${h - 4}" stroke="#94a3b8"/></g></svg>`;
+}
+function aiDraftFor(part, proc) {
+  const base = DEFAULT_CHECKS[`${part}|${proc}`];
+  let list;
+  if (base && base.length) {
+    list = clone(base).map(it => ({ ...it, conf: 'high' }));
+    const low = list.find(it => it.type === 'num') || list[0];
+    Object.assign(low, { conf: 'low', why: '手書きの許容差がかすれていて、読み切れていません。紙と見比べてください' });
+  } else {
+    list = [
+      { ...O(1, 'キズ・打痕', 'なきこと', '目視'), conf: 'high' },
+      { ...O(2, '刻印', '品番・ロット', '目視'), conf: 'high' },
+      { ...N(3, '厚さ', 't25', 25, -0.05, 0.05, 0.01, '外側マイクロメータ'), conf: 'low', why: '「±0.05」か「±0.08」か読み切れていません。紙と見比べてください' },
+    ];
+  }
+  return list.map(it => ({ ...it, use: true, checked: it.conf !== 'low' }));
+}
+function applyItems(list) {
+  const cur = CHECKS[masterEdit] = CHECKS[masterEdit] || [];
+  const fresh = cur.length === 0;
+  let n = Math.max(0, ...cur.map(x => x.n));
+  list.filter(it => it.use !== false).forEach(it => {
+    const { use, conf, why, checked, ...rest } = it;
+    cur.push({ ...rest, n: fresh ? rest.n : ++n });
+  });
+  QUEUE = QUEUE.filter(q => `${q.part}|${q.proc}` !== masterEdit); saveQueue();
+  saveMaster(); ckMode = 'table'; tplDraft = null; aiDraft = null; aiImg = null;
+}
+function openEditor(key) {
+  masterEdit = key; tplDraft = null; aiDraft = null; aiImg = null; copyFrom = null;
+  const [p, q] = key.split('|');
+  const queued = QUEUE.find(x => x.part === p && x.proc === q);
+  ckMode = itemsFor(p, q).length ? 'table' : queued ? 'ai' : 'tpl';
+  if (ckMode === 'ai') { aiImg = QIMG[queued.id] || 'sample'; aiDraft = aiDraftFor(p, q); }
+  if (ckMode === 'tpl') setTpl(TPL_FOR_PROC[q] || Object.keys(TEMPLATES)[0]);
+}
+function setTpl(name) {
+  tplSel = name;
+  tplDraft = clone(TEMPLATES[name]).map(it => ({ ...it, use: true, nom: it.type === 'num' ? '' : undefined }));
+}
+
 function renderMaster() {
   const sel = FILTERS.master, rows = routeRows();
   const { opts, rows: hit } = cascade(rows, sel);
-  const combos = Object.keys(PARTS).flatMap(part => PARTS[part].route.map(proc => [part, proc]));
+  const combos = Object.keys(PARTS).flatMap(part => PARTS[part].route.map(proc => [part, proc]))
+    .filter(([p, q]) => ROUTES.some(r => r.part === p && r.proc === q));
   const noMain = combos.filter(([p, q]) => !ROUTES.some(r => r.part === p && r.proc === q && r.main));
-  const noItems = combos.filter(([p, q]) => itemsFor(p, q).length === 0 && ROUTES.some(r => r.part === p && r.proc === q));
+  const uses = (p, q) => reports.filter(r => r.part === p && r.proc === q).length;
+  const todo = combos.filter(([p, q]) => itemsFor(p, q).length === 0).sort((a, b) => uses(...b) - uses(...a));
+  const doneN = combos.length - todo.length;
   const defEmp = sel.emp || (sel.team ? EMPLOYEES.find(e => e.team === sel.team).name : EMPLOYEES[0].name);
   const defEquip = sel.equip || (sel.proc ? PROCESSES[sel.proc][0] : EQUIPS[0]);
   const defPart = sel.part || Object.keys(PARTS)[0];
   const [ep, eq] = masterEdit ? masterEdit.split('|') : [];
   const eItems = masterEdit ? itemsFor(ep, eq) : [];
   const numOpt = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1];
+  const queued = masterEdit ? QUEUE.find(q => q.part === ep && q.proc === eq) : null;
+  const copyList = Object.keys(CHECKS).filter(k => k !== masterEdit && CHECKS[k].length)
+    .sort((a, b) => (b.split('|')[1] === eq) - (a.split('|')[1] === eq));
+  const MODES = [['tpl', 'ひな形から作る'], ['copy', '似た品番から写す'], ['ai', '紙の写真から（AI 下書き）'], ['table', '表で1行ずつ直す']];
+
+  let modeHtml = '';
+  if (masterEdit && ckMode === 'tpl') {
+    modeHtml = `
+    <p class="note">工程ごとの「ひな形」を選び、<b>使う項目に印を付けて、基準値だけ入れれば</b>できあがります。100種類あっても、項目の組み合わせはひな形の数だけで足ります。</p>
+    <div class="chips" style="margin-bottom:10px">${Object.keys(TEMPLATES).map(t => `<button class="chip sm ${tplSel === t ? 'on' : ''}" data-tpl="${t}">${t}<small>${TEMPLATES[t].length}項目</small></button>`).join('')}</div>
+    ${tplDraft ? `<div class="tablewrap"><table class="list ck" style="min-width:760px">
+      <tr><th>使う</th><th>項目</th><th>表示</th><th>基準（ここだけ入れる）</th><th>許容差</th><th>測る道具</th></tr>
+      ${tplDraft.map((it, i) => `<tr ${it.use ? '' : 'style="opacity:.45"'}>
+        <td style="width:56px"><input type="checkbox" data-td="${i}|use" ${it.use ? 'checked' : ''} style="width:22px;height:22px"></td>
+        <td style="min-width:120px"><input data-td="${i}|name" value="${esc(it.name)}"></td>
+        <td style="min-width:120px"><input data-td="${i}|label" value="${esc(it.label)}"></td>
+        <td style="min-width:130px">${it.type === 'num' ? `<input type="number" step="any" data-td="${i}|nom" value="${esc(it.nom)}" placeholder="例 120.00" style="${it.use && it.nom === '' ? 'background:#fef3c7;border-color:#f59e0b' : ''}">` : '<span class="note">目視（入れなくてよい）</span>'}</td>
+        <td class="spec">${it.type === 'num' ? `${tolTxt(it.tm)} / ${tolTxt(it.tp)}` : '−'}</td>
+        <td style="min-width:140px"><input data-td="${i}|tool" value="${esc(it.tool)}"></td></tr>`).join('')}
+    </table></div>
+    <div style="margin-top:10px"><button class="mini dark" id="tplApply">この内容で作る</button>
+      <span class="note">　許容差・刻みはひな形のまま入ります。違うものだけ、あとで「表で1行ずつ直す」で直します。</span></div>` : ''}`;
+  } else if (masterEdit && ckMode === 'copy') {
+    const src = copyFrom && CHECKS[copyFrom];
+    modeHtml = `
+    <p class="note">できあがっている品番×工程から写して、<b>違うところ（基準値など）だけ直します</b>。同じ工程のものが上に並びます。</p>
+    <div class="addrow"><select id="copySrc"><option value="">写す元を選ぶ</option>${copyList.map(k => { const [p, q] = k.split('|'); return `<option value="${k}" ${copyFrom === k ? 'selected' : ''}>${p} ${PARTS[p].name} × 工程 ${q}（${CHECKS[k].length}項目）</option>`; }).join('')}</select>
+      <button class="mini dark" id="copyApply" ${src ? '' : 'disabled'}>写す</button></div>
+    ${src ? `<div class="preview" style="margin-top:10px">${src.map(it => itemRow(it, {}, true)).join('')}</div>` : ''}`;
+  } else if (masterEdit && ckMode === 'ai') {
+    const allOk = aiDraft && aiDraft.every(it => !it.use || it.checked);
+    modeHtml = `
+    <p class="note"><b>今の紙のチェックシートを写真に撮るだけ</b>で、AI が項目・規格・測る道具を表に下書きします。管理者は、<b>黄色の「要確認」だけ紙と見比べて</b>登録します。</p>
+    ${queued ? `<div class="warnbox">現場の ${queued.emp} さんが ${queued.time} に、この品番×工程の紙のシートを送ってくれています。</div>` : ''}
+    ${!aiImg ? `<div class="addrow">
+        <label class="mini dark" style="cursor:pointer">紙のシートの写真を選ぶ<input type="file" accept="image/*" capture="environment" id="aiFile" hidden></label>
+        <button class="mini" id="aiSample">見本の紙で試す</button></div>` : `
+    <div class="row" style="margin-top:8px">
+      <div><div class="group-label" style="margin-top:0">写真</div>${aiImg === 'sample' ? paperSvg(ep, eq, aiDraft) : `<img src="${aiImg}" alt="紙のチェックシート" style="width:100%;border-radius:8px">`}</div>
+      <div><div class="group-label" style="margin-top:0">AI の読み取り結果（下書き）</div>
+        ${aiDraft.map((it, i) => `<div class="it" style="${it.conf === 'low' ? 'background:#fffbeb;border-radius:8px;padding:10px' : ''}">
+          <div class="it-head"><input type="checkbox" data-ad="${i}|use" ${it.use ? 'checked' : ''} title="使う" style="width:20px;height:20px">
+            <span class="ball">${it.n}</span><div class="it-name"><input data-ad="${i}|name" value="${esc(it.name)}" style="font:inherit;width:120px;padding:4px 6px;border:1px solid var(--line);border-radius:6px">
+            <div class="spec">${esc(specText(it))}・${esc(it.tool)}</div></div>
+            ${it.conf === 'low' ? `<span class="badge b-注意">要確認</span>` : '<span class="badge b-OK">読み取り済み</span>'}</div>
+          ${it.type === 'num' ? `<div class="addrow" style="margin:8px 0 0 30px">
+            <span class="spec">基準</span><input type="number" step="any" data-ad="${i}|nom" value="${it.nom}" style="width:90px">
+            <span class="spec">下</span><input type="number" step="any" data-ad="${i}|tm" value="${it.tm}" style="width:80px">
+            <span class="spec">上</span><input type="number" step="any" data-ad="${i}|tp" value="${it.tp}" style="width:80px"></div>` : ''}
+          ${it.conf === 'low' ? `<div class="note" style="margin:6px 0 0 30px">${esc(it.why)}<br>
+            <label><input type="checkbox" data-ad="${i}|checked" ${it.checked ? 'checked' : ''}> 紙と見比べて確認した</label></div>` : ''}
+        </div>`).join('')}
+        <div style="margin-top:12px"><button class="mini dark" id="aiApply" ${allOk ? '' : 'disabled'}>確認したので登録する</button>
+          ${allOk ? '' : '<span class="note">　黄色の「要確認」を見比べると押せます</span>'}</div>
+      </div>
+    </div>
+    <p class="note">※ プロトタイプの読み取り結果は見本です。本番では、写真を AI に読ませて、この表を作ります。</p>`}`;
+  } else if (masterEdit) {
+    modeHtml = `
+    <p class="note">寸法は「基準」と「下・上の許容差」を入れると、規格の表示と OK・注意・NG の判定が自動で決まります。
+      「1回の刻み」はタブレットの ± ボタン1回分（測る道具の目盛りに合わせます）。「注意の幅」は許容差の内側の何％を「注意」にするか。</p>
+    <div class="tablewrap"><table class="list ck" style="min-width:1180px">
+      <tr><th>番号</th><th>項目</th><th>種類</th><th>表示</th><th>基準</th><th>下の許容差（−）</th><th>上の許容差（＋）</th><th>1回の刻み</th><th>注意の幅%</th><th>測る道具</th><th></th></tr>
+      ${eItems.map((it, i) => { const num = it.type === 'num'; const d = num ? '' : 'disabled'; return `<tr>
+        <td style="width:64px"><input type="number" data-ce="${i}|n" value="${it.n}"></td>
+        <td style="min-width:130px"><input data-ce="${i}|name" value="${esc(it.name)}"></td>
+        <td style="min-width:96px"><select data-ce="${i}|type"><option value="num" ${num ? 'selected' : ''}>寸法</option><option value="ok" ${num ? '' : 'selected'}>目視</option></select></td>
+        <td style="min-width:130px"><input data-ce="${i}|label" value="${esc(it.label)}"></td>
+        <td style="min-width:100px"><input type="number" step="any" data-ce="${i}|nom" value="${num ? it.nom : ''}" ${d}></td>
+        <td style="min-width:100px"><input type="number" step="any" data-ce="${i}|tm" value="${num ? it.tm : ''}" ${d}></td>
+        <td style="min-width:100px"><input type="number" step="any" data-ce="${i}|tp" value="${num ? it.tp : ''}" ${d}></td>
+        <td style="min-width:96px">${num ? `<select data-ce="${i}|step">${numOpt.map(s => `<option ${it.step === s ? 'selected' : ''}>${s}</option>`).join('')}</select>` : '<span class="note">−</span>'}</td>
+        <td style="min-width:80px"><input type="number" data-ce="${i}|warn" value="${num ? (it.warn ?? 15) : ''}" ${d}></td>
+        <td style="min-width:160px"><input data-ce="${i}|tool" value="${esc(it.tool)}"></td>
+        <td style="width:64px"><button class="mini del" data-delitem="${i}">消す</button></td></tr>`; }).join('')}
+    </table></div>
+    <div style="margin-top:10px"><button class="mini dark" id="addItem">項目を1行足す</button></div>
+    <h3>タブレットでの見え方</h3>
+    <div class="preview">${eItems.length ? eItems.map(it => itemRow(it, {}, true)).join('') : '<p class="note">項目がありません。上の「ひな形から作る」「似た品番から写す」「紙の写真から」で作れます。</p>'}</div>
+    <p class="note">図面の丸番号は「番号」で結びつきます。図面に番号を置く作業は、本番では AI が下書きして人が確認する想定です。</p>`;
+  }
 
   $('#app').innerHTML = `
   <div class="card">
     <h2>決まりの修正</h2>
     <p class="note" style="margin-top:0">「この人が、この設備で、この品番のこの工程をやる」という決まりの一覧です。<b>左の列で選ぶと、右の列が絞り込まれます。</b><br>
       ここを直すと、タブレットの選択肢・QRの自動入力・チェック項目に、すぐ反映されます。</p>
-    ${noMain.length || noItems.length ? `<div class="warnbox">
-      ${noMain.map(([p, q]) => `⚠ ${p} ${PARTS[p].name} × 工程 ${q} に主担当がいません（QRを読んでも担当が入りません）`).join('<br>')}
-      ${noMain.length && noItems.length ? '<br>' : ''}
-      ${noItems.map(([p, q]) => `⚠ ${p} ${PARTS[p].name} × 工程 ${q} にチェック項目がありません <button class="mini" data-editck="${p}|${q}">項目を足す</button>`).join('<br>')}
-    </div>` : ''}
+    ${noMain.length ? `<div class="warnbox">${noMain.map(([p, q]) => `⚠ ${p} ${PARTS[p].name} × 工程 ${q} に主担当がいません（QRを読んでも担当が入りません）`).join('<br>')}</div>` : ''}
     <div class="tablewrap"><div class="mcols" style="min-width:760px">${LEVELS.map(([k, label], i) => `
       <div class="mcol"><div class="mhead"><b>${label}</b>${i < 4 ? '<span>▶</span>' : ''}</div>
         <button class="mitem ${sel[k] == null ? 'on' : ''}" data-f="master|${k}|"><span>すべて</span><span class="cnt">${opts[k].reduce((s, [, n]) => s + n, 0)}</span></button>
         ${opts[k].map(([v, n]) => `<button class="mitem ${sel[k] === v ? 'on' : ''}" data-f="master|${k}|${esc(v)}"><span>${k === 'part' ? `${v}<small>${PARTS[v].name}</small>` : k === 'emp' ? `${v}<small>${teamOf(v)}</small>` : k === 'equip' ? `${eqLabel(v)}<small>工程 ${EQUIP_PROC[v]}</small>` : v}</span><span class="cnt">${n}</span></button>`).join('')}
       </div>`).join('')}</div></div>
+  </div>
+
+  <div class="card">
+    <h2>チェック項目の登録状況（紙からの移行）</h2>
+    <div class="progress"><div style="width:${combos.length ? doneN / combos.length * 100 : 0}%"></div></div>
+    <p class="note" style="margin:6px 0 12px">品番×工程 ${combos.length} 件のうち <b>${doneN} 件</b> がタブレットで入力できます（残り ${todo.length} 件は紙のまま）。<br>
+      <b>全部を一度に作らなくて大丈夫です。</b>現場で「項目がまだない」品番に当たったら、作業者がその場で紙のシートを撮って送ります。
+      届いたものと、よく作る品番から順に登録すれば、紙が1枚ずつ減っていきます。</p>
+    ${QUEUE.length ? `<div class="group-label">現場から届いた紙のシート（${QUEUE.length}件）</div>
+      ${QUEUE.map(q => `<div class="ngrow" style="border-color:#fde68a;background:#fffbeb">
+        <div><span class="badge b-注意">登録待ち</span>　${q.part} ${PARTS[q.part].name} × 工程 ${q.proc}　<span class="spec">${q.emp} さん・${q.time}${QIMG[q.id] ? '・写真あり' : ''}</span></div>
+        <button class="mini dark" data-fromqueue="${q.id}">写真から作る</button></div>`).join('')}` : ''}
+    ${todo.length ? `<div class="group-label">まだ項目がない品番×工程（日報の多い順）</div>
+      <div class="tablewrap"><table class="list" style="min-width:560px">
+        <tr><th>品番</th><th>工程</th><th>今日の日報</th><th></th></tr>
+        ${todo.map(([p, q]) => `<tr><td>${p} ${PARTS[p].name}</td><td>${q}</td><td>${uses(p, q)}件</td><td><button class="mini dark" data-editck="${p}|${q}">作る</button></td></tr>`).join('')}
+      </table></div>` : '<p class="done">すべての品番×工程にチェック項目があります。</p>'}
   </div>
 
   <div class="card">
@@ -852,28 +1031,9 @@ function renderMaster() {
   </div>
 
   ${masterEdit ? `<div class="card" id="ckEditor">
-    <h2>チェック項目：${ep} ${PARTS[ep].name} × 工程 ${eq} <button class="mini" id="closeCk">閉じる</button></h2>
-    <p class="note" style="margin-top:0">寸法は「基準」と「下・上の許容差」を入れると、規格の表示と OK・注意・NG の判定が自動で決まります。
-      「1回の刻み」はタブレットの ± ボタン1回分（測る道具の目盛りに合わせます）。「注意の幅」は許容差の内側の何％を「注意」にするか。</p>
-    <div class="tablewrap"><table class="list ck" style="min-width:1000px">
-      <tr><th>番号</th><th>項目</th><th>種類</th><th>表示</th><th>基準</th><th>下の許容差</th><th>上の許容差</th><th>1回の刻み</th><th>注意の幅%</th><th>測る道具</th><th></th></tr>
-      ${eItems.map((it, i) => { const d = it.type === 'ok' ? 'disabled' : ''; return `<tr>
-        <td style="width:60px"><input type="number" data-ce="${i}|n" value="${it.n}"></td>
-        <td><input data-ce="${i}|name" value="${esc(it.name)}"></td>
-        <td style="width:90px"><select data-ce="${i}|type"><option value="num" ${it.type === 'num' ? 'selected' : ''}>寸法</option><option value="ok" ${it.type === 'ok' ? 'selected' : ''}>目視</option></select></td>
-        <td><input data-ce="${i}|label" value="${esc(it.label)}"></td>
-        <td><input type="number" step="any" data-ce="${i}|nom" value="${it.type === 'num' ? it.nom : ''}" ${d}></td>
-        <td><input type="number" step="any" data-ce="${i}|tm" value="${it.type === 'num' ? it.tm : ''}" ${d} placeholder="−0.05"></td>
-        <td><input type="number" step="any" data-ce="${i}|tp" value="${it.type === 'num' ? it.tp : ''}" ${d} placeholder="+0.05"></td>
-        <td style="width:90px"><select data-ce="${i}|step" ${d}>${numOpt.map(s => `<option ${it.step === s ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
-        <td style="width:80px"><input type="number" data-ce="${i}|warn" value="${it.type === 'num' ? (it.warn ?? 15) : ''}" ${d}></td>
-        <td><input data-ce="${i}|tool" value="${esc(it.tool)}"></td>
-        <td><button class="mini del" data-delitem="${i}">消す</button></td></tr>`; }).join('')}
-    </table></div>
-    <div style="margin-top:10px"><button class="mini dark" id="addItem">項目を足す</button></div>
-    <h3>タブレットでの見え方</h3>
-    <div class="preview">${eItems.length ? eItems.map(it => itemRow(it, {}, true)).join('') : '<p class="note">項目がありません。</p>'}</div>
-    <p class="note">図面の丸番号は「番号」で結びつきます。図面に番号を置く作業は、本番では AI が下書きして人が確認する想定です。</p>
+    <h2>チェック項目：${ep} ${PARTS[ep].name} × 工程 ${eq}　<span class="spec">${eItems.length}項目</span> <button class="mini" id="closeCk">閉じる</button></h2>
+    <div class="modes">${MODES.map(([m, label]) => `<button class="${ckMode === m ? 'on' : ''}" data-ckmode="${m}">${label}</button>`).join('')}</div>
+    ${modeHtml}
   </div>` : ''}
 
   <div class="card noprint">
@@ -921,7 +1081,7 @@ function setFilter(key, lvl, val) {
     if (`${f.part}|${f.proc}` !== before) { f.values = {}; f.called = null; }
     if (f.part && f.proc && !editAssign) history.pushState(null, '', `?part=${f.part}&proc=${f.proc}`);
   }
-  if (key === 'master') masterEdit = sel.part && sel.proc ? `${sel.part}|${sel.proc}` : masterEdit;
+  if (key === 'master' && sel.part && sel.proc && masterEdit !== `${sel.part}|${sel.proc}`) openEditor(`${sel.part}|${sel.proc}`);
 }
 
 document.addEventListener('click', e => {
@@ -975,10 +1135,33 @@ document.addEventListener('click', e => {
     if (!CHECKS[`${part}|${proc}`]) CHECKS[`${part}|${proc}`] = [];
     saveMaster();
     Object.assign(FILTERS.master, { team: teamOf(emp), emp, equip, proc, part });
-    masterEdit = `${part}|${proc}`;
+    openEditor(`${part}|${proc}`);
     toast(`${emp} さんが ${eqLabel(equip)} で ${part}（工程 ${proc}）をやる決まりを足しました${first ? '（主担当）' : ''}`);
   }
-  else if (d.editck) { masterEdit = masterEdit === d.editck ? null : d.editck; }
+  else if (d.editck) { if (masterEdit === d.editck && ckMode === 'table') masterEdit = null; else openEditor(d.editck); }
+  else if (d.ckmode) {
+    ckMode = d.ckmode;
+    if (ckMode === 'tpl' && !tplDraft) setTpl(TPL_FOR_PROC[masterEdit.split('|')[1]] || Object.keys(TEMPLATES)[0]);
+    if (ckMode === 'ai' && !aiDraft) { const [p, q] = masterEdit.split('|'); const qd = QUEUE.find(x => x.part === p && x.proc === q); if (qd) { aiImg = QIMG[qd.id] || 'sample'; aiDraft = aiDraftFor(p, q); } }
+  }
+  else if (d.tpl) setTpl(d.tpl);
+  else if (b.id === 'tplApply') {
+    const miss = tplDraft.filter(it => it.use && it.type === 'num' && (it.nom === '' || isNaN(parseFloat(it.nom))));
+    if (miss.length) { toast(`基準値が入っていません：${miss.map(x => x.name).join('、')}`); return; }
+    const n0 = itemsFor(...masterEdit.split('|')).length;
+    applyItems(tplDraft.map(it => it.type === 'num' ? { ...it, nom: parseFloat(it.nom), label: (!it.label || /[φ.]$/.test(it.label)) ? `${it.label}${it.nom}` : it.label } : it));
+    toast(`ひな形から ${itemsFor(...masterEdit.split('|')).length - n0} 項目を作りました。タブレットにすぐ出ます`);
+  }
+  else if (b.id === 'copyApply') {
+    const n0 = itemsFor(...masterEdit.split('|')).length;
+    if (n0 && !confirm('今ある項目の後ろに足しますか？')) return;
+    applyItems(clone(CHECKS[copyFrom]));
+    toast('写しました。基準値など違うところだけ直してください');
+  }
+  else if (b.id === 'aiSample') { aiImg = 'sample'; aiDraft = aiDraftFor(...masterEdit.split('|')); }
+  else if (d.fromqueue) { const q = QUEUE.find(x => x.id === d.fromqueue); openEditor(`${q.part}|${q.proc}`); ckMode = 'ai'; aiImg = QIMG[q.id] || 'sample'; aiDraft = aiDraftFor(q.part, q.proc); }
+  else if (b.id === 'aiApply') { const n = aiDraft.filter(it => it.use).length; applyItems(aiDraft); toast(`${n} 項目を登録しました。次からこの品番×工程はタブレットで入力できます（紙はいりません）`); }
+  else if (d.sendpaper) { QUEUE.push({ id: 'q' + Date.now(), part: f.part, proc: f.proc, emp: f.emp || '（担当なし）', time: nowHM() }); saveQueue(); toast('管理者に送りました。今日は紙のシートに書いてください'); }
   else if (b.id === 'closeCk') masterEdit = null;
   else if (b.id === 'addItem') {
     const list = CHECKS[masterEdit] = CHECKS[masterEdit] || [];
@@ -988,8 +1171,9 @@ document.addEventListener('click', e => {
   else if (d.delitem !== undefined) { CHECKS[masterEdit].splice(+d.delitem, 1); saveMaster(); }
   else if (b.id === 'resetAll') {
     if (!confirm('この端末の決まり・チェック項目・日報・出勤を最初の状態に戻しますか？')) return;
-    ['kn-routes', 'kn-checks', 'kn-reports', 'kn-att', 'kn-draft'].forEach(LS.del);
+    ['kn-routes', 'kn-checks', 'kn-reports', 'kn-att', 'kn-draft', 'kn-queue'].forEach(LS.del);
     ROUTES = clone(DEFAULT_ROUTES); CHECKS = clone(DEFAULT_CHECKS); reports = SEED(); ATT = {}; masterEdit = null;
+    QUEUE = [{ id: 'q1', part: '7C22031150', proc: 'K', emp: '中村 光', time: '09:40' }];
     FILTERS.master = {}; toast('最初の状態に戻しました');
   }
   else return;
@@ -1014,6 +1198,26 @@ document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'hours') { planHours = +t.value; render(); }
   else if (t.dataset.move) { if (moveOrder(t.dataset.move, undefined, t.value)) toast('設備を変えて計算し直しました'); render(); }
+  else if (t.dataset.td) {
+    const [i, field] = t.dataset.td.split('|');
+    tplDraft[+i][field] = field === 'use' ? t.checked : t.value;
+    if (field === 'use') render();
+  }
+  else if (t.id === 'copySrc') { copyFrom = t.value || null; render(); }
+  else if (t.id === 'aiFile' && t.files[0]) { aiImg = URL.createObjectURL(t.files[0]); aiDraft = aiDraftFor(...masterEdit.split('|')); render(); }
+  else if (t.id === 'paperFile' && t.files[0]) {
+    const id = 'q' + Date.now();
+    QIMG[id] = URL.createObjectURL(t.files[0]);
+    QUEUE.push({ id, part: f.part, proc: f.proc, emp: f.emp || '（担当なし）', time: nowHM() }); saveQueue();
+    toast('写真を管理者に送りました。今日は紙のシートに書いてください'); render();
+  }
+  else if (t.dataset.ad) {
+    const [i, field] = t.dataset.ad.split('|'), it = aiDraft[+i];
+    if (field === 'use' || field === 'checked') it[field] = t.checked;
+    else if (['nom', 'tm', 'tp'].includes(field)) { let v = parseFloat(t.value) || 0; if (field === 'tm') v = -Math.abs(v); if (field === 'tp') v = Math.abs(v); it[field] = v; it.checked = true; }
+    else it[field] = t.value;
+    render();
+  }
   else if (t.dataset.ce) {
     const [i, field] = t.dataset.ce.split('|'), it = CHECKS[masterEdit][+i];
     let v = t.value;
