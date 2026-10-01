@@ -87,6 +87,14 @@
   table.list td { padding: 9px 8px; border-bottom: 1px solid #eef0f3; vertical-align: middle; }
   table.list tr.click { cursor: pointer; } table.list tr.click:hover { background: #f9fafb; }
   table.list tr.sel { background: var(--accent-bg); }
+  .slipchip { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; font: inherit; font-size: 13px; padding: 3px 8px 3px 3px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; text-align: left; }
+  .slipchip img { width: 34px; height: 34px; object-fit: cover; border-radius: 5px; }
+  .slipchip span:not(.slipk) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slipchip small { color: var(--sub); }
+  .slipk { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 5px; background: #eef2ff; color: #3730a3; font-size: 11px; font-weight: 700; flex: none; }
+  .slip-ov { position: fixed; inset: 0; background: rgba(15, 23, 42, .55); z-index: 50; display: grid; place-items: center; padding: 16px; }
+  .slip-box { background: #fff; border-radius: 14px; padding: 18px; width: min(900px, 100%); max-height: 92vh; overflow: auto; }
+  table.sliptab { min-width: 0; } table.sliptab th, table.sliptab td { font-size: 13px; padding: 5px 8px; border: 1px solid #e5e7eb; }
   table.mvtab { min-width: 0; }
   table.mvtab th, table.mvtab td { padding: 4px 7px; font-size: 13px; white-space: nowrap; }
   table.mvtab th small, table.mvtab td small { color: var(--sub); font-weight: 400; }
@@ -2010,6 +2018,8 @@ function seedMoves() {
       }
     }
   }));
+  out.filter(m => m.type === 'out' && PARTS[m.part].route[PARTS[m.part].route.length - 1] === m.proc)
+    .sort((a, b) => a.date.localeCompare(b.date)).slice(-3).forEach(m => { m.slip = sampleSlip(m); });
   return out;
 }
 let MOVES = LS.get('kn-moves', null) || seedMoves();
@@ -2061,24 +2071,29 @@ function renderMoves() {
       <span class="spec" style="margin-left:8px">期間</span>${[5, 10, 20].map(n => `<button class="chip sm ${mvF.days === n ? 'on' : ''}" data-mvdays="${n}">${n}日</button>`).join('')}
       <button class="mini" id="mvCsv" style="margin-left:auto">CSVで保存</button>
     </div>
+    <div class="toolbar" style="margin-bottom:12px">
+      <button class="chip ${mvTab === 'table' ? 'on' : ''}" data-mvtab="table">日別の表（入荷・出荷・在庫）</button>
+      <button class="chip ${mvTab === 'ship' ? 'on' : ''}" data-mvtab="ship">出荷一覧（出荷票）</button>
+    </div>
     <div class="kpis">
       <div class="kpi"><div class="v" style="color:#15803d">${tIn ? '＋' + tIn : 0}</div><div class="l">今日の入荷（個）</div></div>
       <div class="kpi"><div class="v" style="color:#b91c1c">${tOut ? '−' + tOut : 0}</div><div class="l">今日の出荷（個）</div></div>
       <div class="kpi"><div class="v">${pairs.reduce((t, [p, q]) => t + mvStock(p, q), 0)}</div><div class="l">いまの在庫の合計（表の品番×工程）</div></div>
       <div class="kpi ${neg.length ? 'alert' : ''}"><div class="v">${neg.length}</div><div class="l">在庫がマイナスの品番×工程</div></div>
     </div>
-    <div class="tablewrap">${movesTableHtml(pairs, mvF.days)}</div>
+    ${mvTab === 'ship' ? shipListHtml(pairs) : `<div class="tablewrap">${movesTableHtml(pairs, mvF.days)}</div>
     <p class="note">作業者が品番×工程の QR を読み、入力画面の「入荷・出荷」で数を入れて「入荷 ＋」「出荷 −」を押すと、この表に日別で入ります。
       在庫＝前の日までの在庫＋その日の入荷−その日の出荷。マイナスは赤（記録の漏れの目印）。品番を押すとその品番のカルテが開きます。<br>
-      ※ これまでの数は見本です。月1回の棚卸で数えた数と、この在庫を比べられます。</p>
+      ※ これまでの数は見本です。月1回の棚卸で数えた数と、この在庫を比べられます。</p>`}
   </div>
   <div class="card"><h2>今日の記録</h2>
-    ${tms.length ? `<table class="list" style="min-width:0">
-      <tr><th>時刻</th><th>品番</th><th>工程</th><th>入荷・出荷</th><th>記録した人</th><th></th></tr>
+    ${tms.length ? `<div class="tablewrap"><table class="list" style="min-width:640px">
+      <tr><th>時刻</th><th>品番</th><th>工程</th><th>入荷・出荷</th><th>記録した人</th><th>出荷票</th><th></th></tr>
       ${tms.map(m => `<tr><td>${m.time}</td><td>${m.part} <span class="spec">${PARTS[m.part] ? PARTS[m.part].name : ''}</span></td><td>${m.proc}</td>
         <td class="${m.type === 'in' ? 'mv-in' : 'mv-out'}"><b>${m.type === 'in' ? '入荷 ＋' : '出荷 −'}${m.qty}</b></td><td>${m.emp}</td>
+        <td>${m.type === 'out' ? (m.slip ? slipChip(m) : `<label class="mini" style="cursor:pointer">付ける<input type="file" accept="${SLIP_ACCEPT}" hidden data-slipfor="${m.id}"></label>`) : ''}</td>
         <td><button class="mini" data-mvdel="${m.id}">取り消す</button></td></tr>`).join('')}
-    </table>` : '<p class="note" style="margin:0">今日の入荷・出荷の記録はまだありません。</p>'}
+    </table></div>` : '<p class="note" style="margin:0">今日の入荷・出荷の記録はまだありません。</p>'}
   </div>`;
 }
 function mvFormHtml() {
@@ -2086,6 +2101,7 @@ function mvFormHtml() {
   const tm = MOVES.filter(m => m.part === p && m.proc === q && m.date === today);
   const tIn = tm.filter(m => m.type === 'in').reduce((t, m) => t + m.qty, 0), tOut = tm.filter(m => m.type === 'out').reduce((t, m) => t + m.qty, 0);
   const st = mvStock(p, q);
+  const pend = slipPending && slipPending.part === p && slipPending.proc === q ? slipPending.slip : null;
   return `<div class="card">
     <h2><span class="step">4</span>入荷・出荷（この品番×工程の在庫）</h2>
     <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
@@ -2097,11 +2113,114 @@ function mvFormHtml() {
     <div class="stepper"><button data-mvd="-10">−10</button><button data-mvd="-1">−1</button><input id="mvQty" inputmode="numeric" value="${mvQty}"><button data-mvd="1">+1</button><button data-mvd="10">+10</button></div>
     <div class="addrow" style="margin-top:10px">
       <button class="mv-btn mv-btn-in" data-mvadd="in">入荷 ＋${mvQty}</button>
-      <button class="mv-btn mv-btn-out" data-mvadd="out">出荷 −${mvQty}</button>
+      <button class="mv-btn mv-btn-out" data-mvadd="out">出荷 −${mvQty}${pend ? '<small style="display:block;font-size:13px;font-weight:400">出荷票つき</small>' : ''}</button>
     </div>
-    ${tm.length ? `<div class="spec" style="margin-top:10px">今日の記録：${tm.map(m => `${m.time} ${m.type === 'in' ? '入荷 ＋' : '出荷 −'}${m.qty}（${m.emp}）${m.emp === f.emp ? `<button class="linkbtn" data-mvdel="${m.id}">取り消す</button>` : ''}`).join('　')}</div>` : ''}
+    <div class="addrow" style="margin-top:10px">
+      <span class="spec">出荷票（任意）</span>
+      ${pend ? `<span class="slipchip" style="cursor:default">${pend.kind === 'image' ? `<img src="${pend.src}" alt="">` : `<span class="slipk">${SLIP_KIND[pend.kind]}</span>`}<span>${esc(pend.name)}</span></span>
+        <button class="linkbtn" id="slipClear">外す</button><span class="note">次の「出荷」に付きます</span>`
+      : `<label class="chip sm" style="cursor:pointer">ファイルを選ぶ（写真・PDF・Excel・CSV）<input type="file" accept="${SLIP_ACCEPT}" hidden id="slipFile"></label>`}
+    </div>
+    ${tm.length ? `<div style="margin-top:12px">${tm.map(m => `<div class="addrow spec" style="margin-top:4px">${m.time} ${m.type === 'in' ? '入荷 ＋' : '出荷 −'}${m.qty}（${m.emp}）
+      ${m.type === 'out' ? (m.slip ? slipChip(m) : `<label class="linkbtn" style="cursor:pointer">出荷票を付ける<input type="file" accept="${SLIP_ACCEPT}" hidden data-slipfor="${m.id}"></label>`) : ''}
+      ${m.emp === f.emp ? `<button class="linkbtn" data-mvdel="${m.id}">取り消す</button>` : ''}</div>`).join('')}</div>` : ''}
     <p class="note">押すとすぐ記録されます（日報の登録とは別）。日別の表は上の「入出荷・在庫」。</p>
   </div>`;
+}
+
+// ---------- 出荷票（出荷ごとに任意で付ける） ----------
+let mvTab = 'table', shipF = 'all', slipPending = null, slipView = null;
+const SLIP_ACCEPT = 'image/*,.pdf,.xlsx,.xls,.csv';
+const SLIP_MAX = 1.5 * 1024 * 1024;
+let xlsxLoading = null;
+function loadXlsx() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return xlsxLoading = xlsxLoading || new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    sc.onload = () => res(window.XLSX); sc.onerror = rej; document.head.appendChild(sc);
+  });
+}
+const readAs = (file, how) => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr[how](file); });
+function decodeText(buf) { try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { return new TextDecoder('shift_jis').decode(buf); } }
+const cutRows = rows => rows.filter(r => r.some(c => String(c).trim())).slice(0, 40).map(r => r.slice(0, 12).map(c => String(c)));
+async function readSlip(file) {
+  const name = file.name, size = file.size, ext = name.split('.').pop().toLowerCase();
+  const base = { name, size, at: `${todayIso()} ${nowHM()}` };
+  const keep = async () => size <= SLIP_MAX ? await readAs(file, 'readAsDataURL') : null;
+  if (file.type.startsWith('image/')) return { ...base, kind: 'image', src: await shrinkImage(file, 1400) };
+  if (ext === 'pdf') return { ...base, kind: 'pdf', src: await keep() };
+  if (ext === 'csv') return { ...base, kind: 'sheet', rows: cutRows(decodeText(await readAs(file, 'readAsArrayBuffer')).split(/\r?\n/).map(l => l.split(','))), src: await keep() };
+  if (ext === 'xlsx' || ext === 'xls') {
+    let rows = null;
+    try {
+      const X = await loadXlsx(), wb = X.read(await readAs(file, 'readAsArrayBuffer'), { type: 'array' });
+      rows = cutRows(X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' }));
+    } catch (e) { rows = null; }
+    return { ...base, kind: 'sheet', rows, src: await keep() };
+  }
+  return null;
+}
+function trySaveMoves() { try { localStorage.setItem('kn-moves', JSON.stringify(MOVES)); return true; } catch (e) { return false; } }
+const kb = n => n >= 1048576 ? (n / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB';
+const SLIP_KIND = { image: '写真', pdf: 'PDF', sheet: '表' };
+function slipChip(m) {
+  const sl = m.slip;
+  return `<button class="slipchip" data-slipview="${m.id}" title="開いて見る">${sl.kind === 'image' ? `<img src="${sl.src}" alt="">` : `<span class="slipk">${SLIP_KIND[sl.kind]}</span>`}<span>${esc(sl.name)}</span>${sl.sample ? '<small>見本</small>' : ''}</button>`;
+}
+const blobUrls = {};
+function dataToBlobUrl(id, src) {
+  if (blobUrls[id]) return blobUrls[id];
+  const [head, b64] = src.split(','), mime = head.slice(5).split(';')[0], bin = atob(b64), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return blobUrls[id] = URL.createObjectURL(new Blob([u8], { type: mime }));
+}
+function slipOverlayHtml() {
+  const m = MOVES.find(x => x.id === slipView);
+  if (!m || !m.slip) return '';
+  const sl = m.slip, url = sl.src ? dataToBlobUrl(m.id + sl.at, sl.src) : null;
+  const noFile = '<p class="note">ファイルが大きいため、この試作では中身を保存していません（本番はファイルの置き場に保存します）。</p>';
+  const body = sl.kind === 'image' ? `<img src="${sl.src}" alt="出荷票" style="max-width:100%;display:block;margin:auto">`
+    : sl.kind === 'pdf' ? (url ? `<iframe src="${url}" title="出荷票" style="width:100%;height:70vh;border:1px solid var(--line);border-radius:8px"></iframe>` : noFile)
+    : sl.rows ? `<div class="tablewrap"><table class="list sliptab">${sl.rows.map((r, i) => `<tr>${r.map(c => i === 0 ? `<th>${esc(c)}</th>` : `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table></div>
+        <p class="note">先頭のシートの、はじめの40行・12列までを表示しています。</p>`
+    : `<p class="note">表の中身を読めませんでした。${url ? '「ファイルを保存」で開いてください。' : ''}</p>`;
+  return `<div class="slip-ov"><div class="slip-box">
+    <div class="pc-head">
+      <div><b>出荷票</b>　${esc(sl.name)} <span class="spec">${sl.size ? kb(sl.size) + '・' : ''}${sl.at} に付けた${sl.sample ? '・見本（中身は架空）' : ''}</span>
+        <div class="spec">${m.date.replace(/-/g, '/')} ${m.time}　${m.part} ${PARTS[m.part] ? PARTS[m.part].name : ''}・工程 ${m.proc}・出荷 ${m.qty}個・${m.emp}</div></div>
+      <div class="addrow">${url ? `<a class="mini" href="${url}" download="${esc(sl.name)}">ファイルを保存</a>` : ''}<button class="mini dark" data-slipclose="1">閉じる</button></div>
+    </div>
+    ${body}
+  </div></div>`;
+}
+function shipListHtml(pairs) {
+  const first = mvDays(mvF.days)[0];
+  const all = MOVES.filter(m => m.type === 'out' && m.date >= first && pairs.some(([p, q]) => m.part === p && m.proc === q))
+    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  const withS = all.filter(m => m.slip).length;
+  const list = all.filter(m => shipF === 'all' || (shipF === 'yes') === !!m.slip);
+  const isLast = m => PARTS[m.part] && PARTS[m.part].route[PARTS[m.part].route.length - 1] === m.proc;
+  return `<div class="toolbar" style="margin:0 0 10px">
+      ${[['all', `すべて ${all.length}件`], ['yes', `出荷票あり ${withS}件`], ['no', `出荷票なし ${all.length - withS}件`]].map(([v, l]) => `<button class="chip sm ${shipF === v ? 'on' : ''}" data-shipf="${v}">${l}</button>`).join('')}
+      <span class="spec" style="margin-left:8px">この一覧の出荷数 <b>${list.reduce((t, m) => t + m.qty, 0)}</b> 個</span>
+    </div>
+    <div class="tablewrap"><table class="list" style="min-width:860px">
+      <tr><th>日付</th><th>時刻</th><th>品番</th><th>工程</th><th style="text-align:right">出荷数</th><th>記録した人</th><th>出荷票</th><th></th></tr>
+      ${list.map(m => `<tr><td>${mdIso(m.date)}</td><td>${m.time}</td>
+        <td><button class="linkbtn" data-karte="${m.part}">${m.part}</button> <span class="spec">${PARTS[m.part] ? PARTS[m.part].name : ''}</span></td>
+        <td><span class="pchip" style="border-color:${procColor(m.proc)}">${m.proc}</span>${isLast(m) ? ' <span class="spec" style="white-space:nowrap">最後の工程</span>' : ''}</td>
+        <td style="text-align:right" class="mv-out"><b>${m.qty}</b></td><td>${m.emp}</td>
+        <td>${m.slip ? slipChip(m) : '<span class="spec">なし</span>'}</td>
+        <td style="white-space:nowrap"><label class="mini" style="cursor:pointer">${m.slip ? '差し替える' : '出荷票を付ける'}<input type="file" accept="${SLIP_ACCEPT}" hidden data-slipfor="${m.id}"></label>
+          ${m.slip ? `<button class="mini" data-slipdel="${m.id}">外す</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="8" class="note">この条件の出荷はありません。</td></tr>'}
+    </table></div>
+    <p class="note">出荷票は任意です。出荷を記録するとき（入力画面）か、あとからこの一覧で付けられます。写真・PDF・Excel・CSV に対応し、Excel・CSV は中身を表で見られます。<br>
+      ※ 試作では端末の中に保存します（1.5MB を超える PDF・Excel は名前と表の中身だけ）。「見本」の出荷票は中身が架空です。</p>`;
+}
+function sampleSlip(m) {
+  return { name: `出荷票_${m.date.replace(/-/g, '')}_${m.part}.xlsx`, size: 0, at: `${m.date} ${m.time}`, kind: 'sheet', sample: true, src: null,
+    rows: [['項目', '内容'], ['出荷日', m.date.replace(/-/g, '/')], ['品番', m.part], ['品名', PARTS[m.part].name], ['数量', String(m.qty)], ['出荷先', 'A社（見本）'], ['担当', m.emp]] };
 }
 
 // ---------- QR（印刷） ----------
@@ -2132,6 +2251,7 @@ function render() {
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
   document.body.classList.toggle('floor', view === 'input');
   ({ input: renderInput, admin: renderAdmin, plan: renderPlan, master: renderMaster, insp: renderInsp, stock: renderStock, karte: renderKarte, moves: renderMoves, qr: renderQR })[view]();
+  if (slipView) $('#app').insertAdjacentHTML('beforeend', slipOverlayHtml());
 }
 function setFilter(key, lvl, val) {
   const sel = key === 'input' ? f : FILTERS[key];
@@ -2196,9 +2316,19 @@ document.addEventListener('click', e => {
     if (!f.emp) { toast('先に人を選んでください'); return; }
     const st = mvStock(f.part, f.proc);
     if (d.mvadd === 'out' && mvQty > st && !confirm(`いまの在庫は ${st} 個です。${mvQty} 個を出荷として記録しますか？`)) return;
-    MOVES.push({ id: 'm' + Date.now(), date: todayIso(), time: nowHM(), part: f.part, proc: f.proc, type: d.mvadd, qty: mvQty, emp: f.emp });
-    saveMoves(); toast(`${f.part} 工程 ${f.proc}：${d.mvadd === 'in' ? '入荷 ＋' : '出荷 −'}${mvQty} を記録しました（在庫 ${mvStock(f.part, f.proc)}）`);
+    const mv = { id: 'm' + Date.now(), date: todayIso(), time: nowHM(), part: f.part, proc: f.proc, type: d.mvadd, qty: mvQty, emp: f.emp };
+    const withSlip = d.mvadd === 'out' && slipPending && slipPending.part === f.part && slipPending.proc === f.proc;
+    if (withSlip) mv.slip = slipPending.slip;
+    MOVES.push(mv);
+    if (!trySaveMoves() && withSlip) { delete mv.slip; saveMoves(); toast('この端末に出荷票を保存できませんでした（容量）。出荷の数だけ記録しました'); }
+    else { if (withSlip) slipPending = null; toast(`${f.part} 工程 ${f.proc}：${d.mvadd === 'in' ? '入荷 ＋' : '出荷 −'}${mvQty} を記録しました${withSlip ? '（出荷票つき）' : ''}（在庫 ${mvStock(f.part, f.proc)}）`); }
   }
+  else if (d.slipview) slipView = d.slipview;
+  else if (d.slipclose) slipView = null;
+  else if (d.slipdel) { if (!confirm('この出荷の出荷票を外しますか？')) return; const m = MOVES.find(x => x.id === d.slipdel); delete m.slip; saveMoves(); toast('出荷票を外しました'); }
+  else if (b.id === 'slipClear') slipPending = null;
+  else if (d.mvtab) mvTab = d.mvtab;
+  else if (d.shipf) shipF = d.shipf;
   else if (d.mvdel) { MOVES = MOVES.filter(m => m.id !== d.mvdel); saveMoves(); toast('取り消しました'); }
   else if (d.mvdays) mvF.days = +d.mvdays;
   else if (d.mvgo) { mvF = { ...mvF, part: d.mvgo, proc: '' }; view = 'moves'; window.scrollTo(0, 0); }
@@ -2449,6 +2579,21 @@ document.addEventListener('input', e => {
 
 document.addEventListener('change', e => {
   const t = e.target;
+  if ((t.id === 'slipFile' || t.dataset.slipfor) && t.files && t.files[0]) {
+    const forId = t.dataset.slipfor, file = t.files[0];
+    toast('出荷票を読み込んでいます…');
+    readSlip(file).then(sl => {
+      if (!sl) { toast('このファイルは付けられません（写真・PDF・Excel・CSV）'); return; }
+      if (forId) {
+        const m = MOVES.find(x => x.id === forId), old = m.slip;
+        m.slip = sl;
+        if (trySaveMoves()) toast(`出荷票「${sl.name}」を付けました`);
+        else { if (old) m.slip = old; else delete m.slip; toast('この端末に保存できませんでした（容量）。小さいファイルにしてください'); }
+      } else { slipPending = { part: f.part, proc: f.proc, slip: sl }; toast('出荷票を選びました。「出荷」を押すと一緒に記録されます'); }
+      render();
+    });
+    return;
+  }
   if (t.id === 'hours') { planHours = +t.value; render(); }
   else if (t.id === 'karteSel') { kartePart = t.value; render(); }
   else if (t.id === 'mvQty') { mvQty = Math.max(1, parseInt(t.value) || 1); render(); }
