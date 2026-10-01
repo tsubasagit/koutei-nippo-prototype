@@ -181,6 +181,10 @@
   .mt-bar { position: absolute; top: 5px; height: 20px; border-radius: 4px; font-size: 10px; line-height: 20px; padding: 0 4px; overflow: hidden; white-space: nowrap; color: #1f2937; border: 1px solid rgba(0,0,0,.1); }
   table.plan td { vertical-align: middle; }
   .g-bar.faded { opacity: .3; }
+  .g-bar .g-prog { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(15,23,42,.18); border-radius: 6px 0 0 6px; pointer-events: none; }
+  .g-bar .g-txt { position: relative; }
+  .g-bar .g-in-setup { position: absolute; left: 0; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, rgba(255,255,255,.75) 0 4px, rgba(255,255,255,.35) 4px 8px); border-radius: 6px 0 0 6px; pointer-events: none; }
+  .g-bar .g-txt b { font-weight: 700; }
   .g-bar[draggable] { cursor: grab; }
   .g-eq2 .g-track { height: 46px; }
   .pcard { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
@@ -245,6 +249,8 @@
     <button data-view="admin">確認（管理者）</button>
     <button data-view="plan">生産管理</button>
     <button data-view="master">品番・マスター（管理者）</button>
+    <button data-view="insp">検査依頼</button>
+    <button data-view="stock">棚卸</button>
     <button data-view="qr">QRコード（印刷）</button>
   </div>
 </header>
@@ -767,6 +773,8 @@ function renderInput() {
     <textarea id="memo" placeholder="刃具交換した、など">${esc(f.memo)}</textarea>
   </div>
 
+  ${inspFormHtml()}
+
   <div class="who ${role !== '主' ? 'warn' : ''}">担当 <b>${f.emp || '（未選択）'}</b>（${teamOf(f.emp) || '−'}）・${f.equip ? eqLabel(f.equip) : '−'}・工程 ${f.proc} で登録します。
     ${role && role !== '主' && main ? `<br><span style="font-size:14px">この品番×工程の主担当は ${main.emp} さんです。代わりに作業した場合は、このままで大丈夫です。</span>` : ''}</div>
   <button class="submit" id="submit">日報とチェックをまとめて登録</button>
@@ -1145,12 +1153,12 @@ function renderPlan() {
         const segs = pl.flatMap(o => o.steps.filter(s => s.eq === eq && s.rem > 0).map(s => ({ o, s })));
         const load = segs.reduce((m, x) => Math.max(m, x.s.end), 0);
         return `<div class="g-row g-eq2" data-eqrow="1" data-eq="${eq}">
-          <div class="g-label"><b>${eqLabel(eq)}</b> <span class="spec">工程 ${EQUIP_PROC[eq]}</span><div class="spec">稼働率 平均${Math.round((RATES[eq] ?? 0.7) * 100)}%・今日${Math.round(todayRate(eq) * 100)}%・手持ち約${load.toFixed(1)}日</div></div>
-          <div class="g-track">${cells}${segs.map(({ o, s }) => `<div class="g-bar ${visibleOrder(o) ? '' : 'faded'}" draggable="true" data-seg="${o.id}|${s.proc}" data-eq="${eq}" style="${pos(s.start, s.end)};background:${BAR[o.status]}" title="${o.id} ${PARTS[o.part].name} 工程${s.proc} 残${s.rem}個">${o.id.slice(2)} ${PARTS[o.part].name}</div>
-            <div class="g-setup" style="${pos(s.start, s.setupEnd)}"></div>`).join('')}</div></div>`;
+          <div class="g-label"><b>${eqLabel(eq)}</b> <span class="spec">工程 ${EQUIP_PROC[eq]}</span><div class="spec">稼働率 平均${Math.round((RATES[eq] ?? 0.7) * 100)}%・今日${Math.round(todayRate(eq) * 100)}%・手持ち約${load.toFixed(1)}日</div>${(() => { const t = {}; reports.filter(r => r.equip === eq).forEach(r => { t[r.part] = (t[r.part] || 0) + r.qty; }); const k = Object.keys(t); return `<div class="spec" style="color:var(--text)">今日の生産数 ${k.length ? k.map(p => `<b>${PARTS[p] ? PARTS[p].name : p} ${t[p]}個</b>`).join("・") : "まだなし"}</div>`; })()}</div>
+          <div class="g-track">${cells}${segs.map(({ o, s }) => `<div class="g-bar ${visibleOrder(o) ? '' : 'faded'}" draggable="true" data-seg="${o.id}|${s.proc}" data-eq="${eq}" style="${pos(s.start, s.end)};background:${BAR[o.status]}" title="${o.id} ${PARTS[o.part].name} 工程${s.proc}：済み ${o.qty - s.rem} / ${o.qty}個（残り ${s.rem}個）"><span class="g-in-setup" style="width:${Math.round((s.setupEnd - s.start) / Math.max(1e-6, s.end - s.start) * 100)}%"></span><span class="g-prog" style="width:${Math.round((o.qty - s.rem) / o.qty * 100)}%"></span><span class="g-txt">${o.id.slice(2)} ${PARTS[o.part].name} <b>${o.qty - s.rem}/${o.qty}</b></span></div>
+            `).join('')}</div></div>`;
       }).join('')}
     </div></div>
-    <p class="note">帯の色は受注の判定（緑＝間に合う、黄＝ぎりぎり、赤＝遅れる）。左の斜線は段取り${SETUP_MIN}分。</p>`;
+    <p class="note">帯の数字は「その工程で済んだ数／受注の数」で、帯の左の濃い部分が済んだ分です。設備名の下に、今日の日報の生産数を品番ごとに出しています。<br>帯の色は受注の判定（緑＝間に合う、黄＝ぎりぎり、赤＝遅れる）。左の斜線は段取り${SETUP_MIN}分。帯にマウスを乗せると残りの数も出ます。</p>`;
 
   $('#app').innerHTML = `
   <div class="card">
@@ -1716,6 +1724,160 @@ function filterPartCards() {
   document.querySelectorAll('.pcard, .ptrow').forEach(c => { c.style.display = !q || c.dataset.search.includes(q) ? '' : 'none'; });
 }
 
+
+// ---------- 検査依頼（今の Airtable「Master_検査依頼書」と同じ流れ） ----------
+const INSP_KINDS = ['初品検査', '寸法測定', '材料不良の確認', '出荷前検査'];
+const DEFAULT_INSP = [
+  { no: 1403, at: '09/24 10:12', want: -4, emp: '山田 太郎', part: '3B51120040', proc: 'LNC', equip: 'LNC-20', qty: 1, kind: '初品検査', status: '完了', result: '合格', meas: 'M-0921', defect: '' },
+  { no: 1405, at: '09/26 15:40', want: -2, emp: '田中 実', part: '7C22031150', proc: 'BR', equip: 'BR-07', qty: 2, kind: '材料不良の確認', status: '完了', result: '不合格', meas: 'M-0930', defect: '26-603' },
+  { no: 1406, at: '09/29 08:55', want: -1, emp: '鈴木 一郎', part: '5D40117620', proc: 'L', equip: '10L-01', qty: 1, kind: '寸法測定', status: '未処理', result: '', meas: '', defect: '' },
+  { no: 1407, at: '09/30 13:20', want: 0, emp: '渡辺 大', part: '7C22031150', proc: 'LNC2', equip: 'LNC-42', qty: 1, kind: '初品検査', status: '検査中', result: '', meas: '', defect: '' },
+  { no: 1408, at: '10/01 08:30', want: 1, emp: '佐藤 健', part: '5D40117620', proc: 'LNC2', equip: 'LNC-42', qty: 1, kind: '初品検査', status: '未処理', result: '', meas: '', defect: '' },
+].map(x => ({ ...x, want: isoDate(addWorkdays(Math.max(0, x.want))) + (x.want < 0 ? '' : ''), wantOff: x.want }));
+DEFAULT_INSP.forEach(x => { if (x.wantOff < 0) { const d = workdayBack(-x.wantOff); x.want = isoDate(d); } delete x.wantOff; });
+let INSPS = LS.get('kn-insp', null) || clone(DEFAULT_INSP);
+const saveInsps = () => LS.set('kn-insp', INSPS);
+let inspF = { st: '未処理', team: '' }, inspOpen = false, inspDraft = null;
+const todayIso = () => isoDate(new Date());
+
+function inspFormHtml() {
+  const d = inspDraft;
+  return `<div class="card">
+    <h2><span class="step">3</span>検査を依頼する（必要なときだけ）</h2>
+    ${!inspOpen ? `<button class="chip" id="inspOpen">この品番の検査を依頼する</button>
+      <span class="note">　品番・工程・設備・名前は、いま入っている内容で依頼書になります。</span>` : `
+    <div class="addrow">
+      <span class="spec">種類</span><select id="in-kind" class="fsel">${INSP_KINDS.map(k => `<option ${d.kind === k ? 'selected' : ''}>${k}</option>`).join('')}</select>
+      <span class="spec">検査希望日</span><input id="in-want" type="date" class="fsel" value="${d.want}" min="${todayIso()}">
+      <span class="spec">数</span><input id="in-qty" type="number" min="1" class="fsel" value="${d.qty}" style="width:80px">
+    </div>
+    <div class="group-label">ひとこと（あれば）</div>
+    <input id="in-memo" class="fsel" style="width:100%" value="${esc(d.memo)}" placeholder="例：外径が下限寄り。測り直してほしい">
+    <div class="addrow" style="margin-top:10px"><button class="mini dark" id="inspSend">検査依頼を出す</button><button class="mini" id="inspCancel">やめる</button>
+      <span class="note">${f.part} ${PARTS[f.part].name}・工程 ${f.proc}・${f.equip ? eqLabel(f.equip) : '−'}・${f.emp || '担当未選択'}</span></div>`}
+  </div>`;
+}
+
+function renderInsp() {
+  const today = todayIso();
+  const list = INSPS.filter(x => (inspF.st === 'すべて' || x.status === inspF.st) && (!inspF.team || teamOf(x.emp) === inspF.team))
+    .sort((a, b) => (a.status === '完了') - (b.status === '完了') || a.want.localeCompare(b.want) || b.no - a.no);
+  const open = INSPS.filter(x => x.status !== '完了');
+  const late = open.filter(x => x.want < today);
+  const dueToday = open.filter(x => x.want === today);
+  $('#app').innerHTML = `
+  <div class="card">
+    <h2>検査依頼</h2>
+    <p class="note" style="margin-top:0">現場がタブレットから出した検査の依頼です。今の Airtable「Master_検査依頼書」の未処理一覧と同じ流れで、検査が済んだら計測データNo.・材不検査票No.を入れて完了にします。</p>
+    <div class="toolbar">
+      ${['未処理', '検査中', '完了', 'すべて'].map(st => `<button class="chip sm ${inspF.st === st ? 'on' : ''}" data-ist="${st}">${st}<small>${st === 'すべて' ? INSPS.length : INSPS.filter(x => x.status === st).length}件</small></button>`).join('')}
+      <span class="spec" style="margin-left:10px">係</span>
+      <select id="if-team" class="fsel"><option value="">すべての係</option>${TEAMS.map(t => `<option ${inspF.team === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+    </div>
+  </div>
+  <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi ${late.length ? 'alert' : ''}"><div class="v">${late.length}</div><div class="l">検査希望日を過ぎた依頼</div></div>
+    <div class="kpi"><div class="v">${dueToday.length}</div><div class="l">今日が検査希望日</div></div>
+    <div class="kpi"><div class="v">${open.length}</div><div class="l">終わっていない依頼</div></div>
+  </div>
+  <div class="card">
+    <div class="tablewrap"><table class="list" style="min-width:1100px">
+      <tr><th>発行No</th><th>依頼日</th><th>検査希望日</th><th>係・氏名</th><th>品番</th><th>工程・設備</th><th>数</th><th>種類</th><th>状態</th><th>計測データNo.</th><th>材不検査票No.</th><th></th></tr>
+      ${list.map(x => `<tr ${x.status !== '完了' && x.want < today ? 'style="background:#fff7f7"' : ''}>
+        <td><b>${x.no}</b></td><td>${x.at}</td>
+        <td>${x.want.slice(5).replace('-', '/')}${x.status !== '完了' && x.want < today ? ' <span class="badge b-NG">過ぎています</span>' : x.want === today ? ' <span class="badge b-注意">今日</span>' : ''}</td>
+        <td>${teamOf(x.emp)}<br>${x.emp}</td><td>${x.part}<div class="spec">${PARTS[x.part] ? PARTS[x.part].name : ''}</div></td>
+        <td>${x.proc}・${eqLabel(x.equip)}</td><td>${x.qty}</td><td>${x.kind}${x.memo ? `<div class="spec">${esc(x.memo)}</div>` : ''}</td>
+        <td>${x.status === '完了' ? `<span class="badge ${x.result === '合格' ? 'b-OK' : 'b-NG'}">${x.result}</span>` : `<span class="badge ${x.status === '検査中' ? 'b-注意' : 'b-未'}">${x.status}</span>`}</td>
+        <td><input class="fsel" style="width:100px" data-imeas="${x.no}" value="${esc(x.meas)}" placeholder="M-0000"></td>
+        <td><input class="fsel" style="width:100px" data-idef="${x.no}" value="${esc(x.defect)}" placeholder="26-000"></td>
+        <td style="white-space:nowrap">${x.status === '未処理' ? `<button class="mini dark" data-istart="${x.no}">検査を始める</button>` : ''}
+          ${x.status === '検査中' ? `<button class="mini" data-idone="${x.no}|合格">合格</button><button class="mini del" data-idone="${x.no}|不合格">不合格</button>` : ''}
+          <button class="mini" data-iprint="${x.no}">依頼書を印刷</button></td></tr>`).join('') || '<tr><td colspan="12" class="note">当てはまる依頼はありません。</td></tr>'}
+    </table></div>
+    <p class="note">※ 今の検査依頼書には、ここに出していない列（7つの非表示の列など）があります。本番では今の項目に合わせます。</p>
+  </div>`;
+}
+function printInsp(no) {
+  const x = INSPS.find(y => y.no === no);
+  const w = window.open('', '_blank');
+  if (!w) { toast('ポップアップが止められました。ブラウザの設定で許可してください'); return; }
+  w.document.write(`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>検査依頼書 ${x.no}</title>
+    <style>body{font-family:"Yu Gothic UI","Meiryo",sans-serif;margin:24mm 18mm;color:#111}h1{font-size:22px;margin:0 0 4px}table{border-collapse:collapse;width:100%;margin-top:14px}
+    td{border:1px solid #333;padding:9px 10px;font-size:14px}td.h{background:#f1f5f9;width:30%;font-weight:600}.sign{display:flex;gap:12px;margin-top:22px}.sign div{border:1px solid #333;width:90px;height:70px;font-size:12px;padding:4px}</style></head>
+    <body><h1>検査依頼書</h1><div>発行No ${x.no}</div>
+    <table><tr><td class="h">依頼日</td><td>${x.at}</td></tr><tr><td class="h">検査希望日</td><td>${x.want}</td></tr>
+    <tr><td class="h">係・氏名</td><td>${teamOf(x.emp)}　${x.emp}</td></tr><tr><td class="h">品番</td><td>${x.part}　${PARTS[x.part] ? PARTS[x.part].name : ''}</td></tr>
+    <tr><td class="h">工程・設備</td><td>${x.proc}　${eqLabel(x.equip)}</td></tr><tr><td class="h">数</td><td>${x.qty}</td></tr><tr><td class="h">種類</td><td>${x.kind}</td></tr>
+    <tr><td class="h">ひとこと</td><td>${esc(x.memo || '')}</td></tr><tr><td class="h">計測データNo.</td><td>${esc(x.meas)}</td></tr><tr><td class="h">材不検査票No.</td><td>${esc(x.defect)}</td></tr>
+    <tr><td class="h">結果</td><td>${x.result || ''}</td></tr></table>
+    <div class="sign"><div>依頼者</div><div>検査</div><div>承認</div></div>
+    <p style="font-size:11px;color:#666;margin-top:18px">プロトタイプの見本（データは架空）</p><script>setTimeout(()=>print(),300)<\/script></body></html>`);
+  w.document.close();
+}
+
+// ---------- 棚卸（月に1回） ----------
+let STOCKS = LS.get('kn-stock', null) || [];
+const saveStocks = () => LS.set('kn-stock', STOCKS);
+let stockCount = {};
+function bookStock() {
+  // 帳簿の数：受注ごとに「この工程まで済んだ数 − 次の工程まで済んだ数」。最後の工程の後は完成品（出荷はまだ見ていない）
+  const rows = {};
+  ORDERS.filter(o => PARTS[o.part] && !PARTS[o.part].archived).forEach(o => {
+    const r = PARTS[o.part].route, done = r.map(q => Math.min(o.qty, (o.done || {})[q] || 0));
+    r.forEach((q, i) => {
+      const n = i < r.length - 1 ? done[i] - done[i + 1] : done[i];
+      const key = `${o.part}|${q}`;
+      rows[key] = (rows[key] || 0) + Math.max(0, n);
+    });
+  });
+  return activeParts().flatMap(p => PARTS[p].route.map((q, i, arr) => ({ part: p, proc: q, last: i === arr.length - 1, next: arr[i + 1], book: rows[`${p}|${q}`] || 0 })));
+}
+function lastWorkdayOfMonth() { const d = new Date(); const e = new Date(d.getFullYear(), d.getMonth() + 1, 0); while (e.getDay() === 0 || e.getDay() === 6) e.setDate(e.getDate() - 1); return e; }
+function renderStock() {
+  const rows = bookStock();
+  const next = lastWorkdayOfMonth();
+  const filled = rows.filter(r => stockCount[`${r.part}|${r.proc}`] !== undefined).length;
+  const diffSum = rows.reduce((t, r) => { const a = stockCount[`${r.part}|${r.proc}`]; return a === undefined ? t : t + (a - r.book); }, 0);
+  $('#app').innerHTML = `
+  <div class="card">
+    <h2>棚卸（月に1回）　<span class="spec">次の棚卸：${next.getMonth() + 1}/${next.getDate()}（${WD[next.getDay()]}）月末の稼働日</span></h2>
+    <p class="note" style="margin-top:0">帳簿の数は、日報の生産数から自動で出しています（工程ごとの「済んだ数」の差＝その工程のあとに置いてある数）。<b>棚卸の日は、数えた数を入れるだけです。</b>帳簿との差が、その場で出ます。</p>
+    <div class="toolbar"><button class="chip dark sm" id="stockPrint">棚卸表を印刷（数えるとき用）</button>
+      <span class="spec">入力 ${filled} / ${rows.length} か所　・　差の合計 <b style="color:${diffSum ? 'var(--ng)' : 'var(--ok)'}">${diffSum > 0 ? '+' : ''}${diffSum}</b> 個</span>
+      <span style="flex:1"></span><button class="chip sm" id="stockFill">帳簿の数をそのまま入れる（試し）</button></div>
+  </div>
+  <div class="card">
+    <div class="tablewrap"><table class="list" style="min-width:880px">
+      <tr><th>品番</th><th>置いてある物</th><th>帳簿の数</th><th>数えた数</th><th>差</th></tr>
+      ${rows.map(r => { const k = `${r.part}|${r.proc}`, a = stockCount[k], df = a === undefined ? null : a - r.book;
+        return `<tr><td>${r.part}<div class="spec">${PARTS[r.part].name}</div></td>
+          <td>${r.last ? '<b>完成品</b>（出荷待ち）' : `工程 ${r.proc} 済み → <b>工程 ${r.next} 待ち</b>`}</td>
+          <td style="font-size:17px">${r.book}</td>
+          <td><div class="stepper"><button data-sc="${k}|-10">−10</button><button data-sc="${k}|-1">−1</button><input data-scin="${k}" inputmode="numeric" value="${a ?? ''}" placeholder="${r.book}"><button data-sc="${k}|1">+1</button><button data-sc="${k}|10">+10</button></div></td>
+          <td>${df === null ? '<span class="spec">未入力</span>' : df === 0 ? '<span class="badge b-OK">合っている</span>' : `<span class="badge b-NG">${df > 0 ? '+' : ''}${df}</span>`}</td></tr>`; }).join('')}
+    </table></div>
+    <div class="addrow" style="margin-top:12px"><button class="mini dark" id="stockSave" ${filled ? '' : 'disabled'}>この内容で棚卸を確定する</button>
+      <span class="note">差がある所は、確定の前に数え直すか、理由（不良で捨てた・数え漏れなど）を確かめてください。</span></div>
+    <p class="note">※ 材料と出荷は、まだ見ていません（出荷の記録をどこから取るかは要確認）。</p>
+  </div>
+  <div class="card"><h2>これまでの棚卸</h2>
+    ${STOCKS.length ? `<table class="list" style="min-width:0">${STOCKS.map(h => `<tr><td>${h.date}</td><td>${h.rows.length}か所</td><td>差のある所 ${h.rows.filter(x => x.actual !== x.book).length}か所</td><td>差の合計 ${h.rows.reduce((t, x) => t + x.actual - x.book, 0)}個</td></tr>`).join('')}</table>` : '<p class="note" style="margin:0">まだありません。確定すると、ここに残ります。</p>'}
+  </div>`;
+}
+function printStockSheet() {
+  const rows = bookStock(), d = lastWorkdayOfMonth();
+  const w = window.open('', '_blank');
+  if (!w) { toast('ポップアップが止められました。ブラウザの設定で許可してください'); return; }
+  w.document.write(`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>棚卸表</title><style>body{font-family:"Yu Gothic UI","Meiryo",sans-serif;margin:16mm}
+    table{border-collapse:collapse;width:100%}td,th{border:1px solid #333;padding:8px;font-size:13px}th{background:#f1f5f9}td.n{width:90px}</style></head>
+    <body><h2 style="margin:0">棚卸表　${d.getFullYear()}年${d.getMonth() + 1}月</h2><p style="font-size:12px">数えた数を書いて、あとでタブレットに入れます（帳簿の数は書いていません）。</p>
+    <table><tr><th>品番</th><th>名前</th><th>置いてある物</th><th>数えた数</th><th>数えた人</th></tr>
+    ${rows.map(r => `<tr><td>${r.part}</td><td>${PARTS[r.part].name}</td><td>${r.last ? '完成品（出荷待ち）' : `工程${r.proc}済み→工程${r.next}待ち`}</td><td class="n"></td><td class="n"></td></tr>`).join('')}</table>
+    <script>setTimeout(()=>print(),300)<\/script></body></html>`);
+  w.document.close();
+}
+
 // ---------- QR（印刷） ----------
 let qrPart = null;
 function renderQR() {
@@ -1743,7 +1905,7 @@ function renderQR() {
 function render() {
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
   document.body.classList.toggle('floor', view === 'input');
-  ({ input: renderInput, admin: renderAdmin, plan: renderPlan, master: renderMaster, qr: renderQR })[view]();
+  ({ input: renderInput, admin: renderAdmin, plan: renderPlan, master: renderMaster, insp: renderInsp, stock: renderStock, qr: renderQR })[view]();
 }
 function setFilter(key, lvl, val) {
   const sel = key === 'input' ? f : FILTERS[key];
@@ -1801,6 +1963,26 @@ document.addEventListener('click', e => {
   else if (d.ocrapply) { const o = ocrMock(currentItems(), f.part, f.proc); Object.assign(f.values, o.fills); ocrOpen = null; toast('読み取った値を入れました。紙と見比べて確かめてください'); }
   // ---- 生産管理 ----
   else if (d.pview) planView = d.pview;
+  else if (b.id === 'inspOpen') { inspOpen = true; inspDraft = { kind: f.phase === '初品' ? '初品検査' : '寸法測定', want: todayIso(), qty: Math.max(1, f.qty ? 1 : 1), memo: '' }; }
+  else if (b.id === 'inspCancel') inspOpen = false;
+  else if (b.id === 'inspSend') {
+    if (!f.emp) { toast('担当が入っていません'); return; }
+    const no = Math.max(1408, ...INSPS.map(x => x.no)) + 1, now = new Date();
+    INSPS.push({ no, at: `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${nowHM()}`, want: inspDraft.want, emp: f.emp, part: f.part, proc: f.proc, equip: f.equip, qty: inspDraft.qty, kind: inspDraft.kind, memo: inspDraft.memo, status: '未処理', result: '', meas: '', defect: '' });
+    saveInsps(); inspOpen = false; toast(`検査依頼 ${no} を出しました。検査の担当の「未処理一覧」に入ります`);
+  }
+  else if (d.ist) inspF.st = d.ist;
+  else if (d.istart) { INSPS.find(x => x.no === +d.istart).status = '検査中'; saveInsps(); toast('検査中にしました'); }
+  else if (d.idone) { const [no, res] = d.idone.split('|'); const x = INSPS.find(y => y.no === +no); x.status = '完了'; x.result = res; saveInsps(); toast(`${no} を${res}で完了にしました${res === '不合格' && !x.defect ? '。材不検査票No.を入れてください' : ''}`); }
+  else if (d.iprint) { printInsp(+d.iprint); return; }
+  else if (d.sc) { const [p0, q0, dlt] = d.sc.split('|'); const k = `${p0}|${q0}`; const book = bookStock().find(r => `${r.part}|${r.proc}` === k).book; stockCount[k] = Math.max(0, (stockCount[k] ?? book) + +dlt); }
+  else if (b.id === 'stockFill') { bookStock().forEach(r => { stockCount[`${r.part}|${r.proc}`] = r.book; }); toast('帳簿の数を入れました（試し）。差を見るには、どこかの数を変えてください'); }
+  else if (b.id === 'stockSave') {
+    const rows = bookStock().filter(r => stockCount[`${r.part}|${r.proc}`] !== undefined).map(r => ({ part: r.part, proc: r.proc, book: r.book, actual: stockCount[`${r.part}|${r.proc}`] }));
+    const d0 = new Date(); STOCKS.unshift({ date: `${d0.getFullYear()}/${d0.getMonth() + 1}/${d0.getDate()} ${nowHM()}`, rows }); saveStocks(); stockCount = {};
+    toast(`棚卸を確定しました（${rows.length}か所）`);
+  }
+  else if (b.id === 'stockPrint') { printStockSheet(); return; }
   else if (d.dbreak) dailyBreak = d.dbreak;
   else if (d.pmv) { const [id, dir] = d.pmv.split('|'); const ids = prioIds(), i = ids.indexOf(id), j = i + +dir; if (j < 0 || j >= ids.length) return; [ids[i], ids[j]] = [ids[j], ids[i]]; renumber(ids); saveOrders(); toast('流す順番を変えて計算し直しました'); }
   else if (d.popt) { const [i, j] = d.popt.split('|').map(Number); const op = planDecisions[i].opts[j]; op.apply(); saveOrders(); toast(`${op.label}：反映しました`); }
@@ -1980,7 +2162,8 @@ document.addEventListener('click', e => {
   else if (d.deleq) { const p = EQUIP_PROC[d.deleq]; PROCESSES[p] = PROCESSES[p].filter(e => e !== d.deleq); commitMaster('外しました'); }
   else if (b.id === 'resetAll') {
     if (!confirm('この端末の品番・マスター・チェック項目・日報・受注・出勤を最初の状態に戻しますか？')) return;
-    ['kn-routes', 'kn-checks', 'kn-reports', 'kn-att', 'kn-draft', 'kn-queue', 'kn-parts', 'kn-emps', 'kn-procs', 'kn-rates', 'kn-ct', 'kn-orders', 'kn-xferlog'].forEach(LS.del);
+    ['kn-routes', 'kn-checks', 'kn-reports', 'kn-att', 'kn-draft', 'kn-queue', 'kn-parts', 'kn-emps', 'kn-procs', 'kn-rates', 'kn-ct', 'kn-orders', 'kn-xferlog', 'kn-insp', 'kn-stock'].forEach(LS.del);
+    INSPS = clone(DEFAULT_INSP); STOCKS = []; stockCount = {};
     EMPLOYEES = clone(DEFAULT_EMPLOYEES); PROCESSES = clone(DEFAULT_PROCESSES); RATES = clone(DEFAULT_RATES); PARTS = clone(DEFAULT_PARTS); CT = clone(DEFAULT_CT);
     rebuild();
     ROUTES = clone(DEFAULT_ROUTES); CHECKS = clone(DEFAULT_CHECKS); reports = SEED(); ATT = {}; ORDERS = clone(DEFAULT_ORDERS);
@@ -2014,6 +2197,11 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'hours') { planHours = +t.value; render(); }
+  else if (t.id === 'if-team') { inspF.team = t.value; render(); }
+  else if (t.id && t.id.startsWith('in-')) { const k = t.id.slice(3); inspDraft[k] = k === 'qty' ? (parseInt(t.value) || 1) : t.value; }
+  else if (t.dataset.imeas) { INSPS.find(x => x.no === +t.dataset.imeas).meas = t.value; saveInsps(); }
+  else if (t.dataset.idef) { INSPS.find(x => x.no === +t.dataset.idef).defect = t.value; saveInsps(); }
+  else if (t.dataset.scin) { const v = t.value.trim(); if (v === '') delete stockCount[t.dataset.scin]; else stockCount[t.dataset.scin] = Math.max(0, parseInt(v) || 0); render(); }
   else if (t.id === 'dailyProc') { dailyProc = t.value; render(); }
   else if (t.id === 'pf-team') { planF = { team: t.value, emp: '', part: '' }; render(); }
   else if (t.id === 'pf-emp') { planF.emp = t.value; planF.part = ''; render(); }
