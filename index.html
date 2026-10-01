@@ -87,6 +87,19 @@
   table.list td { padding: 9px 8px; border-bottom: 1px solid #eef0f3; vertical-align: middle; }
   table.list tr.click { cursor: pointer; } table.list tr.click:hover { background: #f9fafb; }
   table.list tr.sel { background: var(--accent-bg); }
+  table.mvtab { min-width: 0; }
+  table.mvtab th, table.mvtab td { padding: 4px 7px; font-size: 13px; white-space: nowrap; }
+  table.mvtab th small, table.mvtab td small { color: var(--sub); font-weight: 400; }
+  table.mvtab .r { text-align: right; font-variant-numeric: tabular-nums; }
+  table.mvtab .mv-today { background: #eff6ff; }
+  table.mvtab tr.mv-first td { border-top: 2px solid var(--line); }
+  table.mvtab tr.mv-st td { font-weight: 700; background: #f9fafb; }
+  table.mvtab tr.mv-st td.mv-today { background: #dbeafe; }
+  table.mvtab .mv-part, table.mvtab .mv-proc { vertical-align: top; background: #fff; }
+  table.mvtab .mv-k { font-size: 12px; }
+  .mv-in { color: #15803d; } .mv-out { color: #b91c1c; } .mv-neg { color: var(--ng); }
+  .mv-btn { flex: 1; min-width: 180px; font: inherit; font-size: 22px; font-weight: 700; padding: 16px; border-radius: 12px; cursor: pointer; color: #fff; border: 0; }
+  .mv-btn-in { background: #15803d; } .mv-btn-out { background: #b91c1c; }
   .ngrow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid var(--ng-bg); background: #fff7f7; border-radius: 10px; margin-bottom: 8px; }
   .ngrow select, .ngrow button, .mini, .addrow select { font: inherit; font-size: 14px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
   .ngrow button, .mini.dark { background: var(--text); color: #fff; border: 0; cursor: pointer; }
@@ -249,7 +262,9 @@
     <button data-view="admin">確認（管理者）</button>
     <button data-view="plan">生産管理</button>
     <button data-view="master">品番・マスター（管理者）</button>
+    <button data-view="karte">品番カルテ</button>
     <button data-view="insp">検査依頼</button>
+    <button data-view="moves">入出荷・在庫</button>
     <button data-view="stock">棚卸</button>
     <button data-view="qr">QRコード（印刷）</button>
   </div>
@@ -725,7 +740,7 @@ function renderInput() {
   <div class="card">
     <div class="partHead">
       <div><div class="spec">読み取った品番 × 工程</div><div class="big">${f.part}　<span style="font-size:20px">工程 ${f.proc}</span></div><div>${PARTS[f.part].name}（${procsOf(f.part).join(' → ')}）</div></div>
-      <button class="chip" id="rescan">別のQRを読む</button>
+      <div class="addrow"><button class="chip" data-karte="${f.part}">この品番のカルテ</button><button class="chip" id="rescan">別のQRを読む</button></div>
     </div>
     <div class="assign">
       <div><span class="spec">係</span><b>${f.team || teamOf(f.emp) || '−'}</b></div>
@@ -774,6 +789,8 @@ function renderInput() {
   </div>
 
   ${inspFormHtml()}
+
+  ${mvFormHtml()}
 
   <div class="who ${role !== '主' ? 'warn' : ''}">担当 <b>${f.emp || '（未選択）'}</b>（${teamOf(f.emp) || '−'}）・${f.equip ? eqLabel(f.equip) : '−'}・工程 ${f.proc} で登録します。
     ${role && role !== '主' && main ? `<br><span style="font-size:14px">この品番×工程の主担当は ${main.emp} さんです。代わりに作業した場合は、このままで大丈夫です。</span>` : ''}</div>
@@ -1053,8 +1070,8 @@ function planDailyRows(pl) {
   return out;
 }
 const dayDateOf = d => d < 0 ? workdayBack(-d) : addWorkdays(d);
-function dailyHtml(pl) {
-  const keep = r => (!planF.team || teamOf(r.emp) === planF.team) && (!planF.emp || r.emp === planF.emp) && (!planF.part || r.part === planF.part) && (!dailyProc || r.proc === dailyProc);
+function dailyHtml(pl, fixedPart) {
+  const keep = r => (fixedPart ? r.part === fixedPart : (!planF.team || teamOf(r.emp) === planF.team) && (!planF.emp || r.emp === planF.emp) && (!planF.part || r.part === planF.part)) && (!dailyProc || r.proc === dailyProc);
   const rows = [...historyRows(), ...todayRows(), ...planDailyRows(pl)].filter(keep);
   const keyOf = r => dailyBreak === 'part' ? r.part : dailyBreak === 'equip' ? r.equip : r.proc;
   const labelOf = k => dailyBreak === 'part' ? `${k} ${PARTS[k] ? PARTS[k].name : ''}` : dailyBreak === 'equip' ? eqLabel(k) : `工程 ${k}`;
@@ -1497,7 +1514,7 @@ function partCardHtml(part) {
         <span class="badge ${ok ? 'b-OK' : 'b-注意'}">${ok ? '入力できます' : `あと${issues}か所`}</span>
         ${orders ? `<button class="linkbtn" data-planpart="${part}">受注 ${orders}件を生産管理で見る</button>` : ''}</div>
       <div class="addrow"><button class="mini" data-addstep="${part}">＋ 工程を足す</button><button class="mini" data-qrpart="${part}">QRを印刷</button>
-        <button class="mini" data-clonepart="${part}">これを元に新しい品番</button><button class="mini ${partEditing === part ? 'dark' : ''}" data-editpart="${part}">編集</button></div>
+        <button class="mini" data-karte="${part}">カルテ</button><button class="mini" data-clonepart="${part}">これを元に新しい品番</button><button class="mini ${partEditing === part ? 'dark' : ''}" data-editpart="${part}">編集</button></div>
     </div>
     ${partEditing === part ? `<div class="pedit">
       <div class="addrow">
@@ -1726,13 +1743,13 @@ function filterPartCards() {
 
 
 // ---------- 検査依頼（今の Airtable「Master_検査依頼書」と同じ流れ） ----------
-const INSP_KINDS = ['初品検査', '寸法測定', '材料不良の確認', '出荷前検査'];
+const INSP_KINDS = ['材料不良', '設備の変更', 'その他'];
 const DEFAULT_INSP = [
-  { no: 1403, at: '09/24 10:12', want: -4, emp: '山田 太郎', part: '3B51120040', proc: 'LNC', equip: 'LNC-20', qty: 1, kind: '初品検査', status: '完了', result: '合格', meas: 'M-0921', defect: '' },
-  { no: 1405, at: '09/26 15:40', want: -2, emp: '田中 実', part: '7C22031150', proc: 'BR', equip: 'BR-07', qty: 2, kind: '材料不良の確認', status: '完了', result: '不合格', meas: 'M-0930', defect: '26-603' },
-  { no: 1406, at: '09/29 08:55', want: -1, emp: '鈴木 一郎', part: '5D40117620', proc: 'L', equip: '10L-01', qty: 1, kind: '寸法測定', status: '未処理', result: '', meas: '', defect: '' },
-  { no: 1407, at: '09/30 13:20', want: 0, emp: '渡辺 大', part: '7C22031150', proc: 'LNC2', equip: 'LNC-42', qty: 1, kind: '初品検査', status: '検査中', result: '', meas: '', defect: '' },
-  { no: 1408, at: '10/01 08:30', want: 1, emp: '佐藤 健', part: '5D40117620', proc: 'LNC2', equip: 'LNC-42', qty: 1, kind: '初品検査', status: '未処理', result: '', meas: '', defect: '' },
+  { no: 1403, at: '09/24 10:12', want: -4, emp: '山田 太郎', part: '3B51120040', proc: 'LNC', equip: 'LNC-20', qty: 1, kind: 'その他', memo: '初品の寸法を確認してほしい', status: '完了', result: '合格', meas: 'M-0921', defect: '' },
+  { no: 1405, at: '09/26 15:40', want: -2, emp: '田中 実', part: '7C22031150', proc: 'BR', equip: 'BR-07', qty: 2, kind: '材料不良', memo: '端面にス有り', status: '完了', result: '不合格', meas: 'M-0930', defect: '26-603' },
+  { no: 1406, at: '09/29 08:55', want: -1, emp: '鈴木 一郎', part: '5D40117620', proc: 'L', equip: '10L-01', qty: 1, kind: '材料不良', memo: '外径にス', status: '未処理', result: '', meas: '', defect: '' },
+  { no: 1407, at: '09/30 13:20', want: 0, emp: '渡辺 大', part: '7C22031150', proc: 'LNC2', equip: 'LNC-42', qty: 1, kind: '設備の変更', memo: '穴位置確認', status: '検査中', result: '', meas: '', defect: '' },
+  { no: 1408, at: '10/01 08:30', want: 1, emp: '佐藤 健', part: '5D40117620', proc: 'LNC2', equip: 'LNC-42', qty: 1, kind: '材料不良', memo: '振れ大', status: '未処理', result: '', meas: '', defect: '' },
 ].map(x => ({ ...x, want: isoDate(addWorkdays(Math.max(0, x.want))) + (x.want < 0 ? '' : ''), wantOff: x.want }));
 DEFAULT_INSP.forEach(x => { if (x.wantOff < 0) { const d = workdayBack(-x.wantOff); x.want = isoDate(d); } delete x.wantOff; });
 let INSPS = LS.get('kn-insp', null) || clone(DEFAULT_INSP);
@@ -1747,12 +1764,12 @@ function inspFormHtml() {
     ${!inspOpen ? `<button class="chip" id="inspOpen">この品番の検査を依頼する</button>
       <span class="note">　品番・工程・設備・名前は、いま入っている内容で依頼書になります。</span>` : `
     <div class="addrow">
-      <span class="spec">種類</span><select id="in-kind" class="fsel">${INSP_KINDS.map(k => `<option ${d.kind === k ? 'selected' : ''}>${k}</option>`).join('')}</select>
+      <span class="spec">検査内容</span><select id="in-kind" class="fsel">${INSP_KINDS.map(k => `<option ${d.kind === k ? 'selected' : ''}>${k}</option>`).join('')}</select>
       <span class="spec">検査希望日</span><input id="in-want" type="date" class="fsel" value="${d.want}" min="${todayIso()}">
-      <span class="spec">数</span><input id="in-qty" type="number" min="1" class="fsel" value="${d.qty}" style="width:80px">
+      <span class="spec">個</span><input id="in-qty" type="number" min="1" class="fsel" value="${d.qty}" style="width:80px">
     </div>
-    <div class="group-label">ひとこと（あれば）</div>
-    <input id="in-memo" class="fsel" style="width:100%" value="${esc(d.memo)}" placeholder="例：外径が下限寄り。測り直してほしい">
+    <div class="group-label">備考（依頼用）</div>
+    <input id="in-memo" class="fsel" style="width:100%" value="${esc(d.memo)}" placeholder="例：端面にス有り">
     <div class="addrow" style="margin-top:10px"><button class="mini dark" id="inspSend">検査依頼を出す</button><button class="mini" id="inspCancel">やめる</button>
       <span class="note">${f.part} ${PARTS[f.part].name}・工程 ${f.proc}・${f.equip ? eqLabel(f.equip) : '−'}・${f.emp || '担当未選択'}</span></div>`}
   </div>`;
@@ -1782,11 +1799,11 @@ function renderInsp() {
   </div>
   <div class="card">
     <div class="tablewrap"><table class="list" style="min-width:1100px">
-      <tr><th>発行No</th><th>依頼日</th><th>検査希望日</th><th>係・氏名</th><th>品番</th><th>工程・設備</th><th>数</th><th>種類</th><th>状態</th><th>計測データNo.</th><th>材不検査票No.</th><th></th></tr>
+      <tr><th>発行No</th><th>依頼日</th><th>検査希望日</th><th>係・氏名</th><th>品番</th><th>工程・設備</th><th>個</th><th>検査内容・備考</th><th>状態</th><th>計測データNo.</th><th>材不検査票No.</th><th></th></tr>
       ${list.map(x => `<tr ${x.status !== '完了' && x.want < today ? 'style="background:#fff7f7"' : ''}>
         <td><b>${x.no}</b></td><td>${x.at}</td>
         <td>${x.want.slice(5).replace('-', '/')}${x.status !== '完了' && x.want < today ? ' <span class="badge b-NG">過ぎています</span>' : x.want === today ? ' <span class="badge b-注意">今日</span>' : ''}</td>
-        <td>${teamOf(x.emp)}<br>${x.emp}</td><td>${x.part}<div class="spec">${PARTS[x.part] ? PARTS[x.part].name : ''}</div></td>
+        <td>${teamOf(x.emp)}<br>${x.emp}</td><td><button class="linkbtn" data-karte="${x.part}">${x.part}</button><div class="spec">${PARTS[x.part] ? PARTS[x.part].name : ''}</div></td>
         <td>${x.proc}・${eqLabel(x.equip)}</td><td>${x.qty}</td><td>${x.kind}${x.memo ? `<div class="spec">${esc(x.memo)}</div>` : ''}</td>
         <td>${x.status === '完了' ? `<span class="badge ${x.result === '合格' ? 'b-OK' : 'b-NG'}">${x.result}</span>` : `<span class="badge ${x.status === '検査中' ? 'b-注意' : 'b-未'}">${x.status}</span>`}</td>
         <td><input class="fsel" style="width:100px" data-imeas="${x.no}" value="${esc(x.meas)}" placeholder="M-0000"></td>
@@ -1795,7 +1812,7 @@ function renderInsp() {
           ${x.status === '検査中' ? `<button class="mini" data-idone="${x.no}|合格">合格</button><button class="mini del" data-idone="${x.no}|不合格">不合格</button>` : ''}
           <button class="mini" data-iprint="${x.no}">依頼書を印刷</button></td></tr>`).join('') || '<tr><td colspan="12" class="note">当てはまる依頼はありません。</td></tr>'}
     </table></div>
-    <p class="note">※ 今の検査依頼書には、ここに出していない列（7つの非表示の列など）があります。本番では今の項目に合わせます。</p>
+    <p class="note">※ 列は今の検査依頼書（発行No・計測データNo.・材不検査票No.・依頼日・検査希望日・係・氏名・num・個・工程・設備・検査内容・備考（依頼用））に合わせています。品番を押すと、その品番のカルテが開きます。</p>
   </div>`;
 }
 function printInsp(no) {
@@ -1808,8 +1825,8 @@ function printInsp(no) {
     <body><h1>検査依頼書</h1><div>発行No ${x.no}</div>
     <table><tr><td class="h">依頼日</td><td>${x.at}</td></tr><tr><td class="h">検査希望日</td><td>${x.want}</td></tr>
     <tr><td class="h">係・氏名</td><td>${teamOf(x.emp)}　${x.emp}</td></tr><tr><td class="h">品番</td><td>${x.part}　${PARTS[x.part] ? PARTS[x.part].name : ''}</td></tr>
-    <tr><td class="h">工程・設備</td><td>${x.proc}　${eqLabel(x.equip)}</td></tr><tr><td class="h">数</td><td>${x.qty}</td></tr><tr><td class="h">種類</td><td>${x.kind}</td></tr>
-    <tr><td class="h">ひとこと</td><td>${esc(x.memo || '')}</td></tr><tr><td class="h">計測データNo.</td><td>${esc(x.meas)}</td></tr><tr><td class="h">材不検査票No.</td><td>${esc(x.defect)}</td></tr>
+    <tr><td class="h">工程・設備</td><td>${x.proc}　${eqLabel(x.equip)}</td></tr><tr><td class="h">個</td><td>${x.qty}</td></tr><tr><td class="h">検査内容</td><td>${x.kind}</td></tr>
+    <tr><td class="h">備考（依頼用）</td><td>${esc(x.memo || '')}</td></tr><tr><td class="h">計測データNo.</td><td>${esc(x.meas)}</td></tr><tr><td class="h">材不検査票No.</td><td>${esc(x.defect)}</td></tr>
     <tr><td class="h">結果</td><td>${x.result || ''}</td></tr></table>
     <div class="sign"><div>依頼者</div><div>検査</div><div>承認</div></div>
     <p style="font-size:11px;color:#666;margin-top:18px">プロトタイプの見本（データは架空）</p><script>setTimeout(()=>print(),300)<\/script></body></html>`);
@@ -1878,6 +1895,215 @@ function printStockSheet() {
   w.document.close();
 }
 
+
+// ---------- 品番カルテ（品番にひもづくものを1画面に） ----------
+let kartePart = null;
+function renderKarte() {
+  const parts = activeParts();
+  if (!kartePart || !PARTS[kartePart] || PARTS[kartePart].archived) kartePart = parts[0];
+  const p = kartePart, P = PARTS[p];
+  const pl = planAll();
+  const st = partStatus(p);
+  const myOrders = pl.filter(o => o.part === p);
+  const reps = reports.filter(r => r.part === p).sort((a, b) => b.time.localeCompare(a.time));
+  const insps = INSPS.filter(x => x.part === p).sort((a, b) => b.no - a.no);
+  const openInsp = insps.filter(x => x.status !== '完了');
+  const stock = bookStock().filter(r => r.part === p);
+  const lastStock = STOCKS.find(h => h.rows.some(x => x.part === p));
+  const lastProc = P.route[P.route.length - 1];
+  const remain = myOrders.reduce((t, o) => t + Math.max(0, o.qty - ((o.done || {})[lastProc] || 0)), 0);
+  const todayQty = reps.reduce((t, r) => t + r.qty, 0);
+  const finished = (stock.find(r => r.last) || { book: 0 }).book;
+  $('#app').innerHTML = `
+  <div class="card">
+    <div class="toolbar">
+      <span class="spec">品番</span>
+      <select id="karteSel" class="fsel" style="min-width:260px">${parts.map(x => `<option value="${x}" ${x === p ? 'selected' : ''}>${x} ${PARTS[x].name}</option>`).join('')}</select>
+      <span class="note">すべての記録は品番にひもづいています。品番を選ぶと、その品番の工程・受注・日報・検査依頼・在庫がまとめて出ます。</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="pc-head">
+      <div><span class="big2">${p}</span> <span style="font-size:20px">${P.name}</span>
+        <span class="badge ${st.ok ? 'b-OK' : 'b-注意'}">${st.ok ? '入力できます' : `あと${st.issues}か所`}</span></div>
+      <div class="addrow">
+        <button class="mini" data-scan="${p}|${P.route[0]}">入力画面で開く</button>
+        <button class="mini" data-editck="${p}|${P.route[0]}">品番・マスターで直す</button>
+        <button class="mini" data-qrpart="${p}">QRを印刷</button>
+      </div>
+    </div>
+    <div class="row" style="grid-template-columns:.8fr 1.4fr">
+      <div class="drawing">${drawingSvg(p, [], null)}<div class="cap">図面</div></div>
+      <div>
+        <div class="group-label" style="margin-top:0">工程の流れ（★が主担当）</div>
+        <div class="flow" style="gap:4px">${st.steps.map((s0, i) => `${i ? '<span class="arrow" style="font-size:14px">→</span>' : ''}
+          <button class="ppill st-${s0.st}" data-editck="${p}|${s0.proc}" title="${ST_TXT[s0.st]}">${s0.proc}<small>${[...new Set(s0.routes.map(r => r.equip))].map(eqLabel).join('・')}</small><small>${s0.main ? '★' + s0.main.emp : '担当なし'}</small><small>項目${s0.n}・${CT[`${p}|${s0.proc}`] ?? '−'}分/個</small></button>`).join('')}</div>
+        <div class="kpis" style="margin-top:14px">
+          <div class="kpi"><div class="v">${remain}</div><div class="l">受注の残り（個・最後の工程まで）</div></div>
+          <div class="kpi"><div class="v">${todayQty}</div><div class="l">今日の生産数（日報）</div></div>
+          <div class="kpi ${openInsp.length ? 'alert' : ''}"><div class="v">${openInsp.length}</div><div class="l">終わっていない検査依頼</div></div>
+          <div class="kpi"><div class="v">${finished}</div><div class="l">完成品の在庫（帳簿）</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card"><h2>受注と進み</h2>
+    ${myOrders.length ? `<div class="tablewrap"><table class="list" style="min-width:820px">
+      <tr><th>受注</th><th>お客様</th><th>数量</th><th>工程の進み</th><th>納期</th><th>終わる見込み</th><th>判定</th></tr>
+      ${myOrders.map(o => `<tr><td><b>${o.id}</b></td><td>${esc(o.cust)}</td><td>${o.qty}</td>
+        <td><div class="pchips">${o.steps.map(s0 => { const d0 = (o.done || {})[s0.proc] || 0; return `<span class="pchip ${d0 >= o.qty ? 'done' : ''}" style="border-color:${procColor(s0.proc)}">${s0.proc} ${d0 >= o.qty ? '済' : `${d0}/${o.qty}`}</span>`; }).join('')}</div></td>
+        <td>${md(addWorkdays(o.D - 1))}</td><td>${md(dayDate(o.end))}</td><td><span class="badge b-${ST[o.status]}">${o.status}</span></td></tr>`).join('')}
+    </table></div>` : '<p class="note" style="margin:0">いまこの品番の受注はありません。</p>'}
+  </div>
+
+  <div class="card"><h2>日ごとの生産数（${P.name}）</h2>${dailyHtml(pl, p)}</div>
+
+  <div class="card"><h2>今日の日報とチェック</h2>
+    ${reps.length ? `<div class="tablewrap"><table class="list" style="min-width:760px">
+      <tr><th>日報番号</th><th>時刻</th><th>名前</th><th>工程・設備</th><th>区分</th><th>生産数</th><th>不良</th><th>チェック</th><th>写真</th></tr>
+      ${reps.map(r => `<tr><td>${r.no}</td><td>${r.time}</td><td>${r.emp}</td><td>${r.proc}・${eqLabel(r.equip)}</td><td>${r.phase || ''}</td><td>${r.qty}</td><td>${r.ngQty || ''}</td>
+        <td><span class="badge b-${['項目なし', '紙の写真'].includes(r.status) ? '未' : r.status}">${r.status}</span>${r.status === 'NG' ? `<div class="spec">${r.results.filter(x => x.judge === 'NG').map(x => `${x.name} ${x.value}`).join('、')}</div>` : ''}</td>
+        <td>${(r.photos || []).length ? r.photos.length + '枚' : ''}</td></tr>`).join('')}
+    </table></div>` : '<p class="note" style="margin:0">今日はまだ日報がありません。</p>'}
+  </div>
+
+  <div class="card"><h2>検査依頼 <button class="mini" data-view="insp">検査依頼の画面へ</button></h2>
+    ${insps.length ? `<div class="tablewrap"><table class="list" style="min-width:820px">
+      <tr><th>発行No</th><th>依頼日</th><th>検査希望日</th><th>氏名</th><th>工程・設備</th><th>個</th><th>検査内容・備考</th><th>状態</th><th>材不検査票No.</th></tr>
+      ${insps.map(x => `<tr><td><b>${x.no}</b></td><td>${x.at}</td><td>${x.want.slice(5).replace('-', '/')}</td><td>${x.emp}</td><td>${x.proc}・${eqLabel(x.equip)}</td><td>${x.qty}</td>
+        <td>${x.kind}${x.memo ? `<div class="spec">${esc(x.memo)}</div>` : ''}</td>
+        <td>${x.status === '完了' ? `<span class="badge ${x.result === '合格' ? 'b-OK' : 'b-NG'}">${x.result}</span>` : `<span class="badge ${x.status === '検査中' ? 'b-注意' : 'b-未'}">${x.status}</span>`}</td><td>${esc(x.defect)}</td></tr>`).join('')}
+    </table></div>` : '<p class="note" style="margin:0">この品番の検査依頼はありません。</p>'}
+  </div>
+
+  <div class="card"><h2>入荷・出荷・在庫（工程ごと・日別） <button class="mini" data-mvgo="${p}">入出荷・在庫の画面へ</button></h2>
+    <div class="tablewrap">${movesTableHtml(P.route.map(q => [p, q]), 10)}</div>
+  </div>
+
+  <div class="card"><h2>在庫（帳簿と棚卸） <button class="mini" data-view="stock">棚卸の画面へ</button></h2>
+    <table class="list" style="min-width:0">
+      <tr><th>置いてある物</th><th>帳簿の数</th><th>前回の棚卸${lastStock ? `（${lastStock.date}）` : ''}</th></tr>
+      ${stock.map(r => { const h = lastStock && lastStock.rows.find(x => x.part === p && x.proc === r.proc); return `<tr><td>${r.last ? '<b>完成品</b>（出荷待ち）' : `工程 ${r.proc} 済み → 工程 ${r.next} 待ち`}</td><td>${r.book}</td>
+        <td>${h ? `${h.actual}${h.actual !== h.book ? ` <span class="badge b-NG">${h.actual - h.book > 0 ? '+' : ''}${h.actual - h.book}</span>` : ' <span class="badge b-OK">合っていた</span>'}` : '<span class="spec">まだ</span>'}</td></tr>`; }).join('')}
+    </table>
+  </div>`;
+}
+
+// ---------- 入荷・出荷・在庫（品番×工程・日別） ----------
+let mvQty = 10, mvF = { part: '', proc: '', days: 10 };
+function seedMoves() {
+  // 見本：これまで12日分。品番×工程ごとに、入荷（前の工程・材料から来た数）と出荷（次の工程・お客様へ出した数）
+  const out = []; let id = 0;
+  activeParts().forEach(p => PARTS[p].route.forEach((q, qi) => {
+    let st = 0;
+    const base = 20 + Math.round(hashRand(p + q) * 60), emp = (mainRoute(p, q) || {}).emp || '';
+    for (let i = 12; i >= 1; i--) {
+      const d = isoDate(workdayBack(i)), k = `${p}|${q}|${d}`;
+      if (i === 12 || hashRand(k + 'i') < 0.55) {
+        const n = Math.round(base * (0.6 + hashRand(k + 'a') * 0.8));
+        out.push({ id: 'm' + (++id), date: d, time: `08:${String(10 + qi * 7).padStart(2, '0')}`, part: p, proc: q, type: 'in', qty: n, emp }); st += n;
+      }
+      if (st > 0 && hashRand(k + 'o') < 0.7) {
+        const n = Math.min(st, Math.round(base * (0.5 + hashRand(k + 'b') * 0.7)));
+        if (n > 0) { out.push({ id: 'm' + (++id), date: d, time: `16:${String(10 + qi * 7).padStart(2, '0')}`, part: p, proc: q, type: 'out', qty: n, emp }); st -= n; }
+      }
+    }
+  }));
+  return out;
+}
+let MOVES = LS.get('kn-moves', null) || seedMoves();
+const saveMoves = () => LS.set('kn-moves', MOVES);
+const mvSign = m => m.type === 'in' ? m.qty : -m.qty;
+const mvStock = (p, q) => MOVES.filter(m => m.part === p && m.proc === q).reduce((t, m) => t + mvSign(m), 0);
+function mvDays(n) { const arr = []; for (let i = n - 1; i >= 1; i--) arr.push(isoDate(workdayBack(i))); arr.push(todayIso()); return arr; }
+const mdIso = s => { const d = new Date(s + 'T00:00:00'); return `${d.getMonth() + 1}/${d.getDate()}<small>(${WD[d.getDay()]})</small>`; };
+function movesTableHtml(pairs, n) {
+  if (!pairs.length) return '<p class="note">表示する品番×工程がありません。</p>';
+  const days = mvDays(n), first = days[0], today = todayIso();
+  const head = `<tr><th>品番</th><th>工程</th><th></th><th class="r">${mdIso(first)}より前</th>${days.map(d => `<th class="r ${d === today ? 'mv-today' : ''}">${d === today ? '今日 ' : ''}${mdIso(d)}</th>`).join('')}<th class="r">期間の計</th></tr>`;
+  const byPart = {};
+  pairs.forEach(([p, q]) => (byPart[p] = byPart[p] || []).push(q));
+  let body = '';
+  Object.entries(byPart).forEach(([p, qs]) => qs.forEach((q, qi) => {
+    const ms = MOVES.filter(m => m.part === p && m.proc === q);
+    const open = ms.filter(m => m.date < first).reduce((t, m) => t + mvSign(m), 0);
+    const inD = d => ms.filter(m => m.date === d && m.type === 'in').reduce((t, m) => t + m.qty, 0);
+    const outD = d => ms.filter(m => m.date === d && m.type === 'out').reduce((t, m) => t + m.qty, 0);
+    let run = open; const stk = days.map(d => (run += inD(d) - outD(d)));
+    const sumIn = days.reduce((t, d) => t + inD(d), 0), sumOut = days.reduce((t, d) => t + outD(d), 0);
+    const cell = (v, d, cls) => `<td class="r ${cls} ${d === today ? 'mv-today' : ''}">${v}</td>`;
+    const partCell = qi === 0 ? `<td rowspan="${qs.length * 3}" class="mv-part"><button class="linkbtn" data-karte="${p}">${p}</button><div class="spec">${PARTS[p].name}</div></td>` : '';
+    body += `<tr class="mv-first">${partCell}<td rowspan="3" class="mv-proc"><span class="pchip" style="border-color:${procColor(q)}">${q}</span></td><td class="mv-k mv-in">入荷 ＋</td><td class="r"></td>${days.map(d => cell(inD(d) || '', d, 'mv-in')).join('')}<td class="r mv-in"><b>${sumIn}</b></td></tr>
+      <tr><td class="mv-k mv-out">出荷 −</td><td class="r"></td>${days.map(d => cell(outD(d) ? '−' + outD(d) : '', d, 'mv-out')).join('')}<td class="r mv-out"><b>${sumOut ? '−' + sumOut : 0}</b></td></tr>
+      <tr class="mv-st"><td class="mv-k">在庫</td><td class="r">${open}</td>${days.map((d, i) => cell(stk[i], d, stk[i] < 0 ? 'mv-neg' : '')).join('')}<td class="r ${run < 0 ? 'mv-neg' : ''}">${run}</td></tr>`;
+  }));
+  return `<table class="list mvtab">${head}${body}</table>`;
+}
+function mvPairs() {
+  return activeParts().filter(p => !mvF.part || p === mvF.part).flatMap(p => PARTS[p].route.filter(q => !mvF.proc || q === mvF.proc).map(q => [p, q]));
+}
+function renderMoves() {
+  if (mvF.part && (!PARTS[mvF.part] || PARTS[mvF.part].archived)) mvF.part = '';
+  const procs = mvF.part ? PARTS[mvF.part].route : PROC_ORDER;
+  if (mvF.proc && !procs.includes(mvF.proc)) mvF.proc = '';
+  const pairs = mvPairs(), today = todayIso();
+  const inPair = m => pairs.some(([p, q]) => m.part === p && m.proc === q);
+  const tms = MOVES.filter(m => m.date === today && inPair(m)).sort((a, b) => b.time.localeCompare(a.time));
+  const tIn = tms.filter(m => m.type === 'in').reduce((t, m) => t + m.qty, 0), tOut = tms.filter(m => m.type === 'out').reduce((t, m) => t + m.qty, 0);
+  const neg = pairs.filter(([p, q]) => mvStock(p, q) < 0);
+  $('#app').innerHTML = `
+  <div class="card">
+    <h2>入荷・出荷・在庫（品番×工程・日別）</h2>
+    <div class="toolbar" style="margin-bottom:12px">
+      <span class="spec">品番</span><select id="mv-part" class="fsel"><option value="">すべての品番</option>${activeParts().map(p => `<option value="${p}" ${mvF.part === p ? 'selected' : ''}>${p} ${PARTS[p].name}</option>`).join('')}</select>
+      <span class="spec">工程</span><select id="mv-proc" class="fsel"><option value="">すべての工程</option>${procs.map(q => `<option value="${q}" ${mvF.proc === q ? 'selected' : ''}>${q}</option>`).join('')}</select>
+      <span class="spec" style="margin-left:8px">期間</span>${[5, 10, 20].map(n => `<button class="chip sm ${mvF.days === n ? 'on' : ''}" data-mvdays="${n}">${n}日</button>`).join('')}
+      <button class="mini" id="mvCsv" style="margin-left:auto">CSVで保存</button>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="v" style="color:#15803d">${tIn ? '＋' + tIn : 0}</div><div class="l">今日の入荷（個）</div></div>
+      <div class="kpi"><div class="v" style="color:#b91c1c">${tOut ? '−' + tOut : 0}</div><div class="l">今日の出荷（個）</div></div>
+      <div class="kpi"><div class="v">${pairs.reduce((t, [p, q]) => t + mvStock(p, q), 0)}</div><div class="l">いまの在庫の合計（表の品番×工程）</div></div>
+      <div class="kpi ${neg.length ? 'alert' : ''}"><div class="v">${neg.length}</div><div class="l">在庫がマイナスの品番×工程</div></div>
+    </div>
+    <div class="tablewrap">${movesTableHtml(pairs, mvF.days)}</div>
+    <p class="note">作業者が品番×工程の QR を読み、入力画面の「入荷・出荷」で数を入れて「入荷 ＋」「出荷 −」を押すと、この表に日別で入ります。
+      在庫＝前の日までの在庫＋その日の入荷−その日の出荷。マイナスは赤（記録の漏れの目印）。品番を押すとその品番のカルテが開きます。<br>
+      ※ これまでの数は見本です。月1回の棚卸で数えた数と、この在庫を比べられます。</p>
+  </div>
+  <div class="card"><h2>今日の記録</h2>
+    ${tms.length ? `<table class="list" style="min-width:0">
+      <tr><th>時刻</th><th>品番</th><th>工程</th><th>入荷・出荷</th><th>記録した人</th><th></th></tr>
+      ${tms.map(m => `<tr><td>${m.time}</td><td>${m.part} <span class="spec">${PARTS[m.part] ? PARTS[m.part].name : ''}</span></td><td>${m.proc}</td>
+        <td class="${m.type === 'in' ? 'mv-in' : 'mv-out'}"><b>${m.type === 'in' ? '入荷 ＋' : '出荷 −'}${m.qty}</b></td><td>${m.emp}</td>
+        <td><button class="mini" data-mvdel="${m.id}">取り消す</button></td></tr>`).join('')}
+    </table>` : '<p class="note" style="margin:0">今日の入荷・出荷の記録はまだありません。</p>'}
+  </div>`;
+}
+function mvFormHtml() {
+  const p = f.part, q = f.proc, today = todayIso();
+  const tm = MOVES.filter(m => m.part === p && m.proc === q && m.date === today);
+  const tIn = tm.filter(m => m.type === 'in').reduce((t, m) => t + m.qty, 0), tOut = tm.filter(m => m.type === 'out').reduce((t, m) => t + m.qty, 0);
+  const st = mvStock(p, q);
+  return `<div class="card">
+    <h2><span class="step">4</span>入荷・出荷（この品番×工程の在庫）</h2>
+    <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><div class="v" style="color:#15803d">${tIn ? '＋' + tIn : 0}</div><div class="l">今日の入荷</div></div>
+      <div class="kpi"><div class="v" style="color:#b91c1c">${tOut ? '−' + tOut : 0}</div><div class="l">今日の出荷</div></div>
+      <div class="kpi ${st < 0 ? 'alert' : ''}"><div class="v">${st}</div><div class="l">いまの在庫（${p}・工程 ${q}）</div></div>
+    </div>
+    <div class="group-label">数</div>
+    <div class="stepper"><button data-mvd="-10">−10</button><button data-mvd="-1">−1</button><input id="mvQty" inputmode="numeric" value="${mvQty}"><button data-mvd="1">+1</button><button data-mvd="10">+10</button></div>
+    <div class="addrow" style="margin-top:10px">
+      <button class="mv-btn mv-btn-in" data-mvadd="in">入荷 ＋${mvQty}</button>
+      <button class="mv-btn mv-btn-out" data-mvadd="out">出荷 −${mvQty}</button>
+    </div>
+    ${tm.length ? `<div class="spec" style="margin-top:10px">今日の記録：${tm.map(m => `${m.time} ${m.type === 'in' ? '入荷 ＋' : '出荷 −'}${m.qty}（${m.emp}）${m.emp === f.emp ? `<button class="linkbtn" data-mvdel="${m.id}">取り消す</button>` : ''}`).join('　')}</div>` : ''}
+    <p class="note">押すとすぐ記録されます（日報の登録とは別）。日別の表は上の「入出荷・在庫」。</p>
+  </div>`;
+}
+
 // ---------- QR（印刷） ----------
 let qrPart = null;
 function renderQR() {
@@ -1905,7 +2131,7 @@ function renderQR() {
 function render() {
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
   document.body.classList.toggle('floor', view === 'input');
-  ({ input: renderInput, admin: renderAdmin, plan: renderPlan, master: renderMaster, insp: renderInsp, stock: renderStock, qr: renderQR })[view]();
+  ({ input: renderInput, admin: renderAdmin, plan: renderPlan, master: renderMaster, insp: renderInsp, stock: renderStock, karte: renderKarte, moves: renderMoves, qr: renderQR })[view]();
 }
 function setFilter(key, lvl, val) {
   const sel = key === 'input' ? f : FILTERS[key];
@@ -1963,7 +2189,34 @@ document.addEventListener('click', e => {
   else if (d.ocrapply) { const o = ocrMock(currentItems(), f.part, f.proc); Object.assign(f.values, o.fills); ocrOpen = null; toast('読み取った値を入れました。紙と見比べて確かめてください'); }
   // ---- 生産管理 ----
   else if (d.pview) planView = d.pview;
-  else if (b.id === 'inspOpen') { inspOpen = true; inspDraft = { kind: f.phase === '初品' ? '初品検査' : '寸法測定', want: todayIso(), qty: Math.max(1, f.qty ? 1 : 1), memo: '' }; }
+  else if (d.karte) { kartePart = d.karte; view = 'karte'; window.scrollTo(0, 0); }
+  else if (d.mvd) mvQty = Math.max(1, mvQty + parseInt(d.mvd));
+  else if (d.mvadd) {
+    if (!f.part || !f.proc) return;
+    if (!f.emp) { toast('先に人を選んでください'); return; }
+    const st = mvStock(f.part, f.proc);
+    if (d.mvadd === 'out' && mvQty > st && !confirm(`いまの在庫は ${st} 個です。${mvQty} 個を出荷として記録しますか？`)) return;
+    MOVES.push({ id: 'm' + Date.now(), date: todayIso(), time: nowHM(), part: f.part, proc: f.proc, type: d.mvadd, qty: mvQty, emp: f.emp });
+    saveMoves(); toast(`${f.part} 工程 ${f.proc}：${d.mvadd === 'in' ? '入荷 ＋' : '出荷 −'}${mvQty} を記録しました（在庫 ${mvStock(f.part, f.proc)}）`);
+  }
+  else if (d.mvdel) { MOVES = MOVES.filter(m => m.id !== d.mvdel); saveMoves(); toast('取り消しました'); }
+  else if (d.mvdays) mvF.days = +d.mvdays;
+  else if (d.mvgo) { mvF = { ...mvF, part: d.mvgo, proc: '' }; view = 'moves'; window.scrollTo(0, 0); }
+  else if (b.id === 'mvCsv') {
+    const pairs = mvPairs(), days = mvDays(mvF.days), lines = [['日付', '品番', '名前', '工程', '入荷', '出荷', '在庫']];
+    pairs.forEach(([p, q]) => {
+      const ms = MOVES.filter(m => m.part === p && m.proc === q);
+      let run = ms.filter(m => m.date < days[0]).reduce((t, m) => t + mvSign(m), 0);
+      days.forEach(dd => {
+        const i = ms.filter(m => m.date === dd && m.type === 'in').reduce((t, m) => t + m.qty, 0), o = ms.filter(m => m.date === dd && m.type === 'out').reduce((t, m) => t + m.qty, 0);
+        run += i - o; lines.push([dd, p, PARTS[p].name, q, i, o, run]);
+      });
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + lines.map(r => r.join(',')).join('\r\n')], { type: 'text/csv' }));
+    a.download = `入出荷在庫_${todayIso()}.csv`; a.click(); return;
+  }
+  else if (b.id === 'inspOpen') { inspOpen = true; inspDraft = { kind: 'その他', want: todayIso(), qty: Math.max(1, f.qty ? 1 : 1), memo: '' }; }
   else if (b.id === 'inspCancel') inspOpen = false;
   else if (b.id === 'inspSend') {
     if (!f.emp) { toast('担当が入っていません'); return; }
@@ -2162,8 +2415,8 @@ document.addEventListener('click', e => {
   else if (d.deleq) { const p = EQUIP_PROC[d.deleq]; PROCESSES[p] = PROCESSES[p].filter(e => e !== d.deleq); commitMaster('外しました'); }
   else if (b.id === 'resetAll') {
     if (!confirm('この端末の品番・マスター・チェック項目・日報・受注・出勤を最初の状態に戻しますか？')) return;
-    ['kn-routes', 'kn-checks', 'kn-reports', 'kn-att', 'kn-draft', 'kn-queue', 'kn-parts', 'kn-emps', 'kn-procs', 'kn-rates', 'kn-ct', 'kn-orders', 'kn-xferlog', 'kn-insp', 'kn-stock'].forEach(LS.del);
-    INSPS = clone(DEFAULT_INSP); STOCKS = []; stockCount = {};
+    ['kn-routes', 'kn-checks', 'kn-reports', 'kn-att', 'kn-draft', 'kn-queue', 'kn-parts', 'kn-emps', 'kn-procs', 'kn-rates', 'kn-ct', 'kn-orders', 'kn-xferlog', 'kn-insp', 'kn-stock', 'kn-moves'].forEach(LS.del);
+    INSPS = clone(DEFAULT_INSP); STOCKS = []; stockCount = {}; MOVES = seedMoves();
     EMPLOYEES = clone(DEFAULT_EMPLOYEES); PROCESSES = clone(DEFAULT_PROCESSES); RATES = clone(DEFAULT_RATES); PARTS = clone(DEFAULT_PARTS); CT = clone(DEFAULT_CT);
     rebuild();
     ROUTES = clone(DEFAULT_ROUTES); CHECKS = clone(DEFAULT_CHECKS); reports = SEED(); ATT = {}; ORDERS = clone(DEFAULT_ORDERS);
@@ -2197,6 +2450,10 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'hours') { planHours = +t.value; render(); }
+  else if (t.id === 'karteSel') { kartePart = t.value; render(); }
+  else if (t.id === 'mvQty') { mvQty = Math.max(1, parseInt(t.value) || 1); render(); }
+  else if (t.id === 'mv-part') { mvF.part = t.value; mvF.proc = ''; render(); }
+  else if (t.id === 'mv-proc') { mvF.proc = t.value; render(); }
   else if (t.id === 'if-team') { inspF.team = t.value; render(); }
   else if (t.id && t.id.startsWith('in-')) { const k = t.id.slice(3); inspDraft[k] = k === 'qty' ? (parseInt(t.value) || 1) : t.value; }
   else if (t.dataset.imeas) { INSPS.find(x => x.no === +t.dataset.imeas).meas = t.value; saveInsps(); }
